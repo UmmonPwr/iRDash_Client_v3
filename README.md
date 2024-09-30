@@ -5,13 +5,13 @@ The purpose of this program is to display iRacing's live telemetry data on an Ar
 As of now it can show:
 - RPM
 - Eight segment Shift Light Indicator
-- /*Gear*/
-- /*Fuel quantity*/
-- /*Water temperature*/
-- /*Speed*/
-- /*Engine management lights*/
+- (Gear -- WIP)
+- (Fuel quantity -- WIP)
+- (Water temperature -- WIP)
+- (Speed -- WIP)
+- (Engine management lights -- WIP)
 
-It supports multiple profiles to suit the different cars available in the sim. You can choose between them if you touch the middle 1/3 of the display.
+It supports multiple profiles to suit the different cars available in the sim. (You can choose between them if you touch the profile name on the bottom right. -- WIP)
 Currently it has profile for:
 - Skip Barber (Skippy)
 - Cadillac CTS-V
