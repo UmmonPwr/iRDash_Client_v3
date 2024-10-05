@@ -85,20 +85,18 @@ DRAM_ATTR long start_time = 0;
 IRAM_ATTR bool onVsyncEndCallback(void *user_data)
 {
     long frame_start_time = *(long *)user_data;
-    if (frame_start_time == 0) {
-        //(*(long *)user_data) = millis();
-        (*(long *)user_data) = esp_timer_get_time() / 1000;
-
-        return false;
+    if (frame_start_time == 0)
+    {
+      (*(long *)user_data) = esp_timer_get_time() / 1000;
+      return false;
     }
 
     frame_count++;
-    if (frame_count >= LCD_FPS_COUNT_MAX) {
-        //fps = LCD_FPS_COUNT_MAX * 1000 / (millis() - frame_start_time);
-        fps = LCD_FPS_COUNT_MAX * 1000 / (esp_timer_get_time() / 1000 - frame_start_time);
-        frame_count = 0;
-        //(*(long *)user_data) = millis();
-        (*(long *)user_data) = esp_timer_get_time() / 1000;
+    if (frame_count >= LCD_FPS_COUNT_MAX)
+    {
+      fps = LCD_FPS_COUNT_MAX * 1000 / (esp_timer_get_time() / 1000 - frame_start_time);
+      frame_count = 0;
+      (*(long *)user_data) = esp_timer_get_time() / 1000;
     }
 
     return false;
@@ -171,15 +169,11 @@ void my_touchpad_read( lv_indev_t * indev, lv_indev_data_t * data )
   // Send LVGL only the first touch point from the simultaneous touch points
   if (read_touch_result > 0)
   {
-    //coord_x = point[read_touch_result-1].x * TOUCH_WIDTH_SCALE_FACTOR;
-    //coord_y = point[read_touch_result-1].y * TOUCH_HEIGHT_SCALE_FACTOR;
     coord_x = point[0].x * TOUCH_WIDTH_SCALE_FACTOR;
     coord_y = point[0].y * TOUCH_HEIGHT_SCALE_FACTOR;
     
     data->point.x = (int32_t) coord_x;
     data->point.y = (int32_t) coord_y;
-    //data->point.x = point[0].x;
-    //data->point.y = point[0].y;
     data->state = LV_INDEV_STATE_PRESSED;
     Serial.printf("Touch point sent: x %d, y %d\n", data->point.x, data->point.y);
     
@@ -193,14 +187,14 @@ void my_touchpad_read( lv_indev_t * indev, lv_indev_data_t * data )
 // Tick source
 static uint32_t my_tick(void)
 {
-    //return millis();
-    return esp_timer_get_time() / 1000;
+  return esp_timer_get_time() / 1000;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// iRDash variables                                                       ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define NAMELENGTH 10
 // define car identification numbers
 #define NUMOFCARS   10   // number of car profiles, maximum is 16
 #define NUMOFGEARS  10   // maximum number of gears including reverse and neutral
@@ -256,7 +250,8 @@ struct SViewData
 // limits where different drawing color have to be used
 struct SCarProfile
 {
-  char CarName[10];
+  char CarName[NAMELENGTH];
+  byte ID;
   int Fuel;                   // value which below the warning color is used (value in liter * 10)
   int RPM;                    // max value of RPM gauge
   int WaterTemp;              // value in Celsius
@@ -289,6 +284,7 @@ void UploadCarProfiles()
   CarProfile[ID_Skippy].CarName[4] = 'p';
   CarProfile[ID_Skippy].CarName[5] = 'y';
   CarProfile[ID_Skippy].CarName[6] = 0;
+  CarProfile[ID_Skippy].ID = ID_Skippy;
 
   CarProfile[ID_Skippy].Fuel = 25;
   //CarProfile[ID_Skippy].RPM = 291;          // 6000 / RPMscale; where the redline starts on the gauge
@@ -317,6 +313,7 @@ void UploadCarProfiles()
   CarProfile[ID_CTS_V].CarName[3] = '-';
   CarProfile[ID_CTS_V].CarName[4] = 'V';
   CarProfile[ID_CTS_V].CarName[5] = 0;
+  CarProfile[ID_CTS_V].ID = ID_CTS_V;
 
   CarProfile[ID_CTS_V].Fuel = 40;
   //CarProfile[ID_CTS_V].RPM = 288;         // 7200 / RPMscale
@@ -346,6 +343,7 @@ void UploadCarProfiles()
   CarProfile[ID_MX5_NC].CarName[4] = 'N';
   CarProfile[ID_MX5_NC].CarName[5] = 'C';
   CarProfile[ID_MX5_NC].CarName[6] = 0;
+  CarProfile[ID_MX5_NC].ID = ID_MX5_NC;
 
   CarProfile[ID_MX5_NC].Fuel = 40;
   //CarProfile[ID_MX5_NC].RPM = 296;           // 6750 / RPMscale
@@ -363,7 +361,6 @@ void UploadCarProfiles()
     CarProfile[ID_MX5_NC].SLI[i][5] = 6625;
     CarProfile[ID_MX5_NC].SLI[i][6] = 6750;
     CarProfile[ID_MX5_NC].SLI[i][7] = 6850;
-
   }
 
   /**************************/
@@ -376,6 +373,7 @@ void UploadCarProfiles()
   CarProfile[ID_MX5_ND].CarName[4] = 'N';
   CarProfile[ID_MX5_ND].CarName[5] = 'D';
   CarProfile[ID_MX5_ND].CarName[6] = 0;
+  CarProfile[ID_MX5_ND].ID = ID_MX5_ND;
 
   CarProfile[ID_MX5_ND].Fuel = 40;
   //CarProfile[ID_MX5_ND].RPM = 294;           // 6900 / RPMscale
@@ -405,6 +403,7 @@ void UploadCarProfiles()
   CarProfile[ID_FR20].CarName[4] = '.';
   CarProfile[ID_FR20].CarName[5] = '0';
   CarProfile[ID_FR20].CarName[6] = 0;
+  CarProfile[ID_FR20].ID = ID_FR20;
 
   CarProfile[ID_FR20].Fuel = 30;
   //CarProfile[ID_FR20].RPM = 307;           // 7300 / RPMscale
@@ -434,6 +433,7 @@ void UploadCarProfiles()
   CarProfile[ID_DF3].CarName[4] = 'F';
   CarProfile[ID_DF3].CarName[5] = '3';
   CarProfile[ID_DF3].CarName[6] = 0;
+  CarProfile[ID_DF3].ID = ID_DF3;
 
   CarProfile[ID_DF3].Fuel = 10;
   //CarProfile[ID_DF3].RPM = 305;           // 7050 / RPMscale
@@ -463,6 +463,7 @@ void UploadCarProfiles()
   CarProfile[ID_992_CUP].CarName[4] = 'u';
   CarProfile[ID_992_CUP].CarName[5] = 'p';
   CarProfile[ID_992_CUP].CarName[6] = 0;
+  CarProfile[ID_992_CUP].ID = ID_992_CUP;
 
   CarProfile[ID_992_CUP].Fuel = 30;
   //CarProfile[ID_992_CUP].RPM = 298;         // 8200 / RPMscale
@@ -554,6 +555,7 @@ void UploadCarProfiles()
   CarProfile[ID_GR86].CarName[2] = '8';
   CarProfile[ID_GR86].CarName[3] = '6';
   CarProfile[ID_GR86].CarName[4] = 0;
+  CarProfile[ID_GR86].ID = ID_GR86;
  
   CarProfile[ID_GR86].Fuel = 10;
   //CarProfile[ID_GR86].RPM = 296;            // 6950 / RPMscale
@@ -580,6 +582,7 @@ void UploadCarProfiles()
   CarProfile[ID_SFL].CarName[1] = 'F';
   CarProfile[ID_SFL].CarName[2] = 'L';
   CarProfile[ID_SFL].CarName[3] = 0;
+  CarProfile[ID_SFL].ID = ID_SFL;
 
   CarProfile[ID_SFL].Fuel = 10;
   //CarProfile[ID_SFL].RPM = 305;           // 7050 / RPMscale
@@ -609,6 +612,7 @@ void UploadCarProfiles()
   CarProfile[ID_G82_M4].CarName[4] = 'M';
   CarProfile[ID_G82_M4].CarName[5] = '4';
   CarProfile[ID_G82_M4].CarName[6] = 0;
+  CarProfile[ID_G82_M4].ID = ID_G82_M4;
 
   CarProfile[ID_G82_M4].Fuel = 30;
   //CarProfile[ID_G82_M4].RPM = 311;           // 7300 / RPMscale
@@ -691,13 +695,59 @@ void UploadCarProfiles()
 lv_color_t dc, mc, wc, bc, ddc;
 
 // LVGL variables for screen objects
-lv_obj_t *backgroundline1;
-lv_obj_t *backgroundline2;
+lv_obj_t *carselectionmatrix[NUMOFCARS];
+lv_obj_t *carselectionmatrix_label[NUMOFCARS];
+
+lv_obj_t *backgroundline1, *backgroundline2;
 lv_style_t style_backgroundline;
 lv_obj_t *actualcarbutton;
-lv_obj_t *actualcarbuttonlabel;
+lv_obj_t *actualcarbutton_label;
 lv_obj_t *RPMbar;
 lv_obj_t *SLI1, *SLI2, *SLI3, *SLI4, *SLI5, *SLI6, *SLI7, *SLI8;
+
+// car selection menu
+static void carselectionmatrix_handler(lv_event_t * e)
+{
+  lv_obj_t *pressedbutton;
+  byte *ID;
+  
+  lv_event_code_t code = lv_event_get_code(e);
+  switch (code)
+  {
+    case LV_EVENT_CLICKED:
+      pressedbutton = (lv_obj_t*)lv_event_get_current_target(e);
+      ID = (byte*)lv_obj_get_user_data(pressedbutton);     // get the car ID from the pressed button
+      
+      ActiveCar = *ID;
+      AdjustRPM(ActiveCar);
+      DrawGaugesScreen(ActiveCar);
+      break;
+  }
+}
+
+void SetupCarSelectionMenu()
+{
+  for (int i=0; i<NUMOFCARS; i++)
+  {
+    carselectionmatrix[i] = lv_button_create(screen_carselection);
+    lv_obj_set_user_data(carselectionmatrix[i], &CarProfile[i].ID);     // link the car ID to the button
+    carselectionmatrix_label[i] = lv_label_create(carselectionmatrix[i]);
+    
+    lv_obj_center(carselectionmatrix_label[i]);
+    lv_label_set_text(carselectionmatrix_label[i], CarProfile[i].CarName);
+
+    // Setup the buttons
+    lv_obj_add_event_cb(carselectionmatrix[i], carselectionmatrix_handler, LV_EVENT_ALL, NULL);
+    lv_obj_remove_flag(carselectionmatrix[i], LV_OBJ_FLAG_PRESS_LOCK);
+    lv_obj_set_size(carselectionmatrix[i], 100, 50);
+    lv_obj_set_pos(carselectionmatrix[i], ((i%7)*110)+20, ((i/7)*60)+20);
+  }
+}
+
+void DrawCarSelectionMenu()
+{
+  lv_screen_load(screen_carselection);
+}
 
 // LVGL event handler for actual car button
 static void actualcar_handler(lv_event_t * e)
@@ -707,23 +757,13 @@ static void actualcar_handler(lv_event_t * e)
   switch (code)
   {
     case LV_EVENT_CLICKED:
-      //LV_LOG_USER("Clicked");
-      Serial.println("LVGL: car selection button clicked");
-      break;
-
-    case LV_EVENT_VALUE_CHANGED:
-      //LV_LOG_USER("Toggled");
-      Serial.println("LVGL: car selection button toggled");
-      break;
-    
-    default:
-      //Serial.println("LVGL: car selection button event");
+      DrawCarSelectionMenu();
       break;
   }
 }
 
 // draw the background for the instruments
-void SetupBackground()
+void SetupGaugesScreen()
 {
   // Create an array for the points of the background lines
   static lv_point_precise_t line_points1[] = { {0, 150}, {799, 150} };
@@ -746,8 +786,8 @@ void SetupBackground()
 
   // Draw button for car selection menu
   actualcarbutton = lv_button_create(screen_gauges);
-  actualcarbuttonlabel = lv_label_create(actualcarbutton);
-  lv_obj_center(actualcarbuttonlabel);
+  actualcarbutton_label = lv_label_create(actualcarbutton);
+  lv_obj_center(actualcarbutton_label);
 
   // Setup the car selection menu button
   lv_obj_add_event_cb(actualcarbutton, actualcar_handler, LV_EVENT_ALL, NULL);
@@ -757,10 +797,10 @@ void SetupBackground()
 }
 
 // customize background for the actual car profile
-void DrawBackground(char ID)
+void DrawGaugesScreen(char ID)
 {
   // display the name of actual profile on car selection menu button
-  lv_label_set_text(actualcarbuttonlabel, CarProfile[ID].CarName);
+  lv_label_set_text(actualcarbutton_label, CarProfile[ID].CarName);
 
   switch (ID)
   {
@@ -776,6 +816,8 @@ void DrawBackground(char ID)
     case ID_G82_M4:
       break;
   }
+  
+  lv_screen_load(screen_gauges);
 }
 
 // draw the engine warning icons
@@ -1080,12 +1122,13 @@ void setup()
     SetupSLI();
     SetupRPM();
     //SetupGear();
-    SetupBackground();
+    SetupGaugesScreen();
+    SetupCarSelectionMenu();
 
-    DrawBackground(DEFAULTCAR);
+    DrawGaugesScreen(DEFAULTCAR);
     ActiveCar = DEFAULTCAR;
     
-    lv_screen_load(screen_gauges); // set active the gauges screen
+    //lv_screen_load(screen_gauges); // set active the gauges screen
 
     // Create a simple label just for fun
     lv_obj_t *label = lv_label_create(lv_screen_active() );
@@ -1191,7 +1234,5 @@ void loop()
     }
   }
 
-  //lv_timer_handler();   // let the GUI do its work
-  //lv_timer_handler_run_in_period(5); // run lv_timer_handler() every 5ms
   lv_timer_periodic_handler(); // use the sleep time automatically calculated by LVGL
 }

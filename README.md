@@ -12,6 +12,7 @@ As of now it can show:
 - (Engine management lights -- WIP)
 
 It supports multiple profiles to suit the different cars available in the sim. (You can choose between them if you touch the profile name on the bottom right. -- WIP)
+
 Currently it has profile for:
 - Skip Barber (Skippy)
 - Cadillac CTS-V
@@ -24,6 +25,7 @@ Currently it has profile for:
 - BMW G82 M4
 
 The program is developed on an ESP32-8048S043 display module
+- Size: 4.3"
 - Resolution: 800x480
 - Capacitive touch sensing
 - Display driver IC: Sitronics ST7262
