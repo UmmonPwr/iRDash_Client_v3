@@ -9,7 +9,7 @@ As of now it can show:
 - (Fuel quantity -- WIP)
 - (Water temperature -- WIP)
 - (Speed -- WIP)
-- (Engine management lights -- WIP)
+- Engine management lights
 
 It supports multiple profiles to suit the different cars available in the sim. (You can choose between them if you touch the profile name on the bottom right. -- WIP)
 
