@@ -1,6 +1,11 @@
 #include <lvgl.h>
 #include <ESP_Panel_Library.h>
 
+#include "icon_fuelpressure.h"
+#include "icon_stall.h"
+#include "icon_oilpressure.h"
+#include "icon_watertemp.h"
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// ESP_Panel_Library configuration according to ESP32-8048S043 spec (LCD) ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,6 +225,10 @@ static uint32_t my_tick(void)
   irsdk_pitSpeedLimiter   = 0x10,
   irsdk_revLimiterActive    = 0x20,
 }*/
+// values between 0 - 255
+// 255 means black, 0 means original color
+#define WARNINGLIGHT_ON 0
+#define WARNINGLIGHT_OFF 170
 
 // structure of the incoming serial data block
 // variables are aligned for 16/32 bit systems to prevent padding
@@ -719,7 +728,7 @@ static void carselectionmatrix_handler(lv_event_t * e)
       ID = (byte*)lv_obj_get_user_data(pressedbutton);     // get the car ID from the pressed button
       
       ActiveCar = *ID;
-      AdjustRPM(ActiveCar);
+      AdjustMaxRPM(ActiveCar);
       DrawGaugesScreen(ActiveCar);
       break;
   }
@@ -767,7 +776,7 @@ void SetupGaugesScreen()
 {
   // Create an array for the points of the background lines
   static lv_point_precise_t line_points1[] = { {0, 150}, {799, 150} };
-  static lv_point_precise_t line_points2[] = { {0, 400}, {799, 400} };
+  static lv_point_precise_t line_points2[] = { {0, 390}, {799, 400} };
 
   backgroundline1 = lv_line_create(screen_gauges);
   backgroundline2 = lv_line_create(screen_gauges);
@@ -793,7 +802,7 @@ void SetupGaugesScreen()
   lv_obj_add_event_cb(actualcarbutton, actualcar_handler, LV_EVENT_ALL, NULL);
   lv_obj_remove_flag(actualcarbutton, LV_OBJ_FLAG_PRESS_LOCK);
   lv_obj_set_size(actualcarbutton, 100, 50);
-  lv_obj_set_pos(actualcarbutton, 700, 430);
+  lv_obj_set_pos(actualcarbutton, 700, 420);
 }
 
 // customize background for the actual car profile
@@ -821,9 +830,118 @@ void DrawGaugesScreen(char ID)
 }
 
 // draw the engine warning icons
+lv_image_dsc_t img_fuelpressure, img_oilpressure, img_stall, img_watertemp;
+lv_obj_t *icon_fuelpressure, *icon_oilpressure, *icon_stall, *icon_watertemp;
+
+void SetupEngineWarnings()
+{
+  img_fuelpressure.header.cf = LV_COLOR_FORMAT_RGB565A8;
+  img_fuelpressure.header.magic = LV_IMAGE_HEADER_MAGIC;
+  img_fuelpressure.header.w = 80;
+  img_fuelpressure.header.h = 80;
+  img_fuelpressure.data_size = 6400 * 3;
+  img_fuelpressure.data = fuelpressure_map;
+  img_fuelpressure.header.flags = 0;
+  img_fuelpressure.header.reserved_2 = 0;
+  img_fuelpressure.header.stride = 0;
+  img_fuelpressure.reserved = NULL;
+
+  img_oilpressure.header.cf = LV_COLOR_FORMAT_RGB565A8;
+  img_oilpressure.header.magic = LV_IMAGE_HEADER_MAGIC;
+  img_oilpressure.header.w = 80;
+  img_oilpressure.header.h = 80;
+  img_oilpressure.data_size = 6400 * 3;
+  img_oilpressure.data = oilpressure_map;
+  img_oilpressure.header.flags = 0;
+  img_oilpressure.header.reserved_2 = 0;
+  img_oilpressure.header.stride = 0;
+  img_oilpressure.reserved = NULL;
+
+  img_stall.header.cf = LV_COLOR_FORMAT_RGB565A8;
+  img_stall.header.magic = LV_IMAGE_HEADER_MAGIC;
+  img_stall.header.w = 80;
+  img_stall.header.h = 80;
+  img_stall.data_size = 6400 * 3;
+  img_stall.data = stall_map;
+  img_stall.header.flags = 0;
+  img_stall.header.reserved_2 = 0;
+  img_stall.header.stride = 0;
+  img_stall.reserved = NULL;
+
+  img_watertemp.header.cf = LV_COLOR_FORMAT_RGB565A8;
+  img_watertemp.header.magic = LV_IMAGE_HEADER_MAGIC;
+  img_watertemp.header.w = 80;
+  img_watertemp.header.h = 80;
+  img_watertemp.data_size = 6400 * 3;
+  img_watertemp.data = watertemp_map;
+  img_watertemp.header.flags = 0;
+  img_watertemp.header.reserved_2 = 0;
+  img_watertemp.header.stride = 0;
+  img_watertemp.reserved = NULL;
+
+  icon_fuelpressure = lv_image_create(screen_gauges);
+  lv_image_set_src(icon_fuelpressure, &img_fuelpressure);
+  lv_obj_set_pos(icon_fuelpressure, 0, 400);
+
+  icon_oilpressure = lv_image_create(screen_gauges);
+  lv_image_set_src(icon_oilpressure, &img_oilpressure);
+  lv_obj_set_pos(icon_oilpressure, 80, 400);
+
+  icon_watertemp = lv_image_create(screen_gauges);
+  lv_image_set_src(icon_watertemp, &img_watertemp);
+  lv_obj_set_pos(icon_watertemp, 160, 400);
+
+  icon_stall = lv_image_create(screen_gauges);
+  lv_image_set_src(icon_stall, &img_stall);
+  lv_obj_set_pos(icon_stall, 240, 400);
+
+  lv_obj_set_style_image_recolor_opa(icon_watertemp, WARNINGLIGHT_OFF, 0);
+  lv_obj_set_style_image_recolor_opa(icon_stall, WARNINGLIGHT_OFF, 0);
+}
+
 void DrawEngineWarnings(char ID, char Warning, char WarningPrev)
 {
+  char Filtered, FilteredPrev;
 
+  // set water temp light
+  Filtered = Warning & 0x01;
+  FilteredPrev = WarningPrev & 0x01;
+  if (Filtered != FilteredPrev)
+  {
+    if (Filtered != 0) lv_obj_set_style_image_recolor_opa(icon_watertemp, WARNINGLIGHT_ON, 0);
+    else lv_obj_set_style_image_recolor_opa(icon_watertemp, WARNINGLIGHT_OFF, 0);
+  }
+
+  // set fuel pressure light
+  Filtered = Warning & 0x02;
+  FilteredPrev = WarningPrev & 0x02;
+  if (Filtered != FilteredPrev)
+  {
+    if (Filtered != 0) lv_obj_set_style_image_recolor_opa(icon_fuelpressure, WARNINGLIGHT_ON, 0);
+    else lv_obj_set_style_image_recolor_opa(icon_fuelpressure, WARNINGLIGHT_OFF, 0);
+  }
+
+  // set oil pressure light
+  Filtered = Warning & 0x04;
+  FilteredPrev = WarningPrev & 0x04;
+  if (Filtered != FilteredPrev)
+  {
+    if (Filtered != 0) lv_obj_set_style_image_recolor_opa(icon_oilpressure, WARNINGLIGHT_ON, 0);
+    else lv_obj_set_style_image_recolor_opa(icon_oilpressure, WARNINGLIGHT_OFF, 0);
+  }
+
+  // set stall sign light
+  Filtered = Warning & 0x08;
+  FilteredPrev = WarningPrev & 0x08;
+  if (Filtered != FilteredPrev)
+  {
+    if (Filtered != 0) lv_obj_set_style_image_recolor_opa(icon_stall, WARNINGLIGHT_ON, 0);
+    else lv_obj_set_style_image_recolor_opa(icon_stall, WARNINGLIGHT_OFF, 0);
+  }
+
+  // draw limiter sign
+  Filtered = Warning & 0x10;
+  FilteredPrev = WarningPrev & 0x10;
 }
 
 // draw fuel gauge, value is right aligned
@@ -860,12 +978,12 @@ void SetupRPM()
   lv_bar_set_value(RPMbar, 3000, LV_ANIM_OFF);
 }
 
-void AdjustRPM(char ID)
+void AdjustMaxRPM(char ID)
 {
   lv_bar_set_range(RPMbar, 0, CarProfile[ID].RPM);
 }
 
-void DrawRPM(char ID, int RPM, int RPMPrev, char Limiter, char LimiterPrev)
+void DrawRPM(char ID, int RPM, int RPMPrev)
 {
   lv_bar_set_value(RPMbar, RPM, LV_ANIM_OFF);
 }
@@ -1124,12 +1242,11 @@ void setup()
     //SetupGear();
     SetupGaugesScreen();
     SetupCarSelectionMenu();
+    SetupEngineWarnings();
 
     DrawGaugesScreen(DEFAULTCAR);
     ActiveCar = DEFAULTCAR;
     
-    //lv_screen_load(screen_gauges); // set active the gauges screen
-
     // Create a simple label just for fun
     lv_obj_t *label = lv_label_create(lv_screen_active() );
     lv_label_set_text(label, "Hello Arduino, I'm LVGL!");
@@ -1143,7 +1260,6 @@ void setup()
 void loop()
 {
   int rpm_int;
-  byte Limiter[2];      // status of the car's RPM limiter
   char gear;
 
   // read serial port
@@ -1180,9 +1296,7 @@ void loop()
 
                 // calculate and draw RPM gauge
                 Screen[1].RPMgauge = (int)InData->RPM;
-                Limiter[0] = Screen[0].EngineWarnings & 0x10;
-                Limiter[1] = Screen[1].EngineWarnings & 0x10;
-                if ((Screen[0].RPMgauge != Screen[1].RPMgauge || Limiter[1] != Limiter[0])) DrawRPM(ActiveCar, Screen[1].RPMgauge, Screen[0].RPMgauge, Limiter[1], Limiter[0]);
+                if (Screen[0].RPMgauge != Screen[1].RPMgauge) DrawRPM(ActiveCar, Screen[1].RPMgauge, Screen[0].RPMgauge);
 
                 // calculate and draw gear number
                 Screen[1].Gear = InData->Gear;
