@@ -6,6 +6,9 @@
 #include "icon_oilpressure.h"
 #include "icon_watertemp.h"
 
+#include "font_gear.h"
+#include "font_messages.h"
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// ESP_Panel_Library configuration according to ESP32-8048S043 spec (LCD) ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -196,7 +199,7 @@ static uint32_t my_tick(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////// iRDash variables                                                       ////////////////////////////
+//////////////////// iRDash global variables                                                ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define NAMELENGTH 10
@@ -225,8 +228,9 @@ static uint32_t my_tick(void)
   irsdk_pitSpeedLimiter   = 0x10,
   irsdk_revLimiterActive    = 0x20,
 }*/
-// values between 0 - 255
-// 255 means black, 0 means original color
+
+// color shading for engine management lights
+// values between 0 - 255; 255 means black, 0 means original color
 #define WARNINGLIGHT_ON 0
 #define WARNINGLIGHT_OFF 170
 
@@ -276,6 +280,23 @@ char ActiveCar;
 
 // variables to manage screen layout
 SCarProfile CarProfile[NUMOFCARS];     // store warning limits for each car
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////// Support functions                                                      ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Clear our internal data block
+void ResetInternalData()
+{
+  Screen[0].EngineWarnings = 0;
+  Screen[0].Fuel = 0;
+  Screen[0].Gear = -1;
+  Screen[0].RPMgauge = 0;
+  Screen[0].Speed = -1;
+  Screen[0].SLI = 0;
+  Screen[0].WaterTemp = 0;
+  blockpos = 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Car profiles                                                           ////////////////////////////
@@ -697,24 +718,31 @@ void UploadCarProfiles()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////// Gauge functions                                                        ////////////////////////////
+//////////////////// Car profile selection menu                                             ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// LVGL color variables
-lv_color_t dc, mc, wc, bc, ddc;
-
-// LVGL variables for screen objects
+// car button matrix
 lv_obj_t *carselectionmatrix[NUMOFCARS];
 lv_obj_t *carselectionmatrix_label[NUMOFCARS];
 
-lv_obj_t *backgroundline1, *backgroundline2;
-lv_style_t style_backgroundline;
+// car selection menu button
 lv_obj_t *actualcarbutton;
 lv_obj_t *actualcarbutton_label;
-lv_obj_t *RPMbar;
-lv_obj_t *SLI1, *SLI2, *SLI3, *SLI4, *SLI5, *SLI6, *SLI7, *SLI8;
 
-// car selection menu
+// LVGL event handler for actual car button
+static void actualcar_handler(lv_event_t * e)
+{
+  lv_event_code_t code = lv_event_get_code(e);
+
+  switch (code)
+  {
+    case LV_EVENT_CLICKED:
+      DrawCarSelectionMenu();
+      break;
+  }
+}
+
+// LVGL event handler for car button matrix
 static void carselectionmatrix_handler(lv_event_t * e)
 {
   lv_obj_t *pressedbutton;
@@ -758,20 +786,70 @@ void DrawCarSelectionMenu()
   lv_screen_load(screen_carselection);
 }
 
-// LVGL event handler for actual car button
-static void actualcar_handler(lv_event_t * e)
-{
-  lv_event_code_t code = lv_event_get_code(e);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////// Gauge variables                                                        ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  switch (code)
-  {
-    case LV_EVENT_CLICKED:
-      DrawCarSelectionMenu();
-      break;
-  }
-}
+// LVGL color variables
+lv_color_t dc, mc, wc, bc, ddc;
 
-// draw the background for the instruments
+// gauge screen background
+lv_obj_t *backgroundline1, *backgroundline2;
+lv_style_t style_backgroundline;
+
+// RPM bar
+lv_obj_t *RPMbar;
+
+// SLI
+lv_obj_t *SLI1, *SLI2, *SLI3, *SLI4, *SLI5, *SLI6, *SLI7, *SLI8;
+
+// Engine management lights
+lv_image_dsc_t img_fuelpressure, img_oilpressure, img_stall, img_watertemp;
+lv_obj_t *icon_fuelpressure, *icon_oilpressure, *icon_stall, *icon_watertemp;
+
+// Gear number indicator
+lv_obj_t *gear;
+
+// fuel, water, speed numbers
+lv_obj_t *fuel_static_text1, *speed_static_text1, *water_static_text1;
+lv_obj_t *fuel_static_text2, *speed_static_text2, *water_static_text2;
+lv_obj_t *fuel_value_text, *speed_value_text, *water_value_text;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////// Gauge positions                                                        ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define FUELX 0
+#define FUELY 270
+#define SPEEDX 0
+#define SPEEDY 180
+#define WATERX 0
+#define WATERY 320
+#define DELTA1 260  // offset for the unit
+#define DELTA2 170  // offset for the actual value
+
+#define GEARX 630
+#define GEARY 180
+
+#define RPMY 80
+#define SLIY 10
+
+#define EML_FUELPRESSX 0
+#define EML_FUELPRESSY 400
+#define EML_OILPRESSX 80
+#define EML_OILPRESSY 400
+#define EML_WATERTEMPX 160
+#define EML_WATERTEMPY 400
+#define EML_STALLX 240
+#define EML_STALLY 400
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////// Gauge functions                                                        ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**********************************************/
+// Draw the background for the instruments
+/**********************************************/
 void SetupGaugesScreen()
 {
   // Create an array for the points of the background lines
@@ -811,7 +889,7 @@ void DrawGaugesScreen(char ID)
   // display the name of actual profile on car selection menu button
   lv_label_set_text(actualcarbutton_label, CarProfile[ID].CarName);
 
-  switch (ID)
+  /*switch (ID)
   {
     case ID_Skippy:
     case ID_CTS_V:
@@ -824,15 +902,14 @@ void DrawGaugesScreen(char ID)
     case ID_SFL:
     case ID_G82_M4:
       break;
-  }
+  }*/
   
   lv_screen_load(screen_gauges);
 }
 
-// draw the engine warning icons
-lv_image_dsc_t img_fuelpressure, img_oilpressure, img_stall, img_watertemp;
-lv_obj_t *icon_fuelpressure, *icon_oilpressure, *icon_stall, *icon_watertemp;
-
+/**********************************************/
+// Draw the engine warning icons
+/**********************************************/
 void SetupEngineWarnings()
 {
   img_fuelpressure.header.cf = LV_COLOR_FORMAT_RGB565A8;
@@ -881,25 +958,25 @@ void SetupEngineWarnings()
 
   icon_fuelpressure = lv_image_create(screen_gauges);
   lv_image_set_src(icon_fuelpressure, &img_fuelpressure);
-  lv_obj_set_pos(icon_fuelpressure, 0, 400);
+  lv_obj_set_pos(icon_fuelpressure, EML_FUELPRESSX, EML_FUELPRESSY);
 
   icon_oilpressure = lv_image_create(screen_gauges);
   lv_image_set_src(icon_oilpressure, &img_oilpressure);
-  lv_obj_set_pos(icon_oilpressure, 80, 400);
+  lv_obj_set_pos(icon_oilpressure, EML_OILPRESSX, EML_OILPRESSY);
 
   icon_watertemp = lv_image_create(screen_gauges);
   lv_image_set_src(icon_watertemp, &img_watertemp);
-  lv_obj_set_pos(icon_watertemp, 160, 400);
+  lv_obj_set_pos(icon_watertemp, EML_WATERTEMPX, EML_WATERTEMPY);
 
   icon_stall = lv_image_create(screen_gauges);
   lv_image_set_src(icon_stall, &img_stall);
-  lv_obj_set_pos(icon_stall, 240, 400);
+  lv_obj_set_pos(icon_stall, EML_STALLX, EML_STALLY);
 
   lv_obj_set_style_image_recolor_opa(icon_watertemp, WARNINGLIGHT_OFF, 0);
   lv_obj_set_style_image_recolor_opa(icon_stall, WARNINGLIGHT_OFF, 0);
 }
 
-void DrawEngineWarnings(char ID, char Warning, char WarningPrev)
+void DrawEngineWarnings(char Warning, char WarningPrev)
 {
   char Filtered, FilteredPrev;
 
@@ -944,36 +1021,122 @@ void DrawEngineWarnings(char ID, char Warning, char WarningPrev)
   FilteredPrev = WarningPrev & 0x10;
 }
 
-// draw fuel gauge, value is right aligned
-void DrawFuel(char ID, int Fuel, int FuelPrev)
+/**********************************************/
+// Draw fuel gauge
+/**********************************************/
+void SetupFuel()
 {
-
+  fuel_static_text1 = lv_label_create(screen_gauges);
+  fuel_static_text2 = lv_label_create(screen_gauges);
+  fuel_value_text = lv_label_create(screen_gauges);
+  lv_label_set_text(fuel_static_text1, "Fuel:");
+  lv_label_set_text(fuel_static_text2, "L");
+  lv_label_set_text(fuel_value_text, "0.0");
+  lv_obj_set_pos(fuel_static_text1, FUELX, FUELY);
+  lv_obj_set_pos(fuel_static_text2, FUELX + DELTA1, FUELY);
+  lv_obj_set_pos(fuel_value_text, FUELX + DELTA2, FUELY);
+  
+  lv_obj_set_style_text_font(fuel_static_text1, &font_messages, 0);
+  lv_obj_set_style_text_font(fuel_static_text2, &font_messages, 0);
+  lv_obj_set_style_text_font(fuel_value_text, &font_messages, 0);
 }
 
-// draw gear number
+void DrawFuel(int Fuel, int FuelPrev)
+{
+  // received value is multiplied by 10 to keep first fraction
+  if(Fuel != FuelPrev) lv_label_set_text_fmt(fuel_value_text, "%d.%d", Fuel / 10, Fuel % 10);
+}
+
+/**********************************************/
+// Draw speed gauge
+/**********************************************/
+void SetupSpeed()
+{
+  speed_static_text1 = lv_label_create(screen_gauges);
+  speed_static_text2 = lv_label_create(screen_gauges);
+  speed_value_text = lv_label_create(screen_gauges);
+  lv_label_set_text(speed_static_text1, "Speed:");
+  lv_label_set_text(speed_static_text2, "Km/h");
+  lv_label_set_text(speed_value_text, "0");
+  lv_obj_set_pos(speed_static_text1, SPEEDX, SPEEDY);
+  lv_obj_set_pos(speed_static_text2, SPEEDX + DELTA1, SPEEDY);
+  lv_obj_set_pos(speed_value_text, SPEEDX + DELTA2, SPEEDY);
+  
+  lv_obj_set_style_text_font(speed_static_text1, &font_messages, 0);
+  lv_obj_set_style_text_font(speed_static_text2, &font_messages, 0);
+  lv_obj_set_style_text_font(speed_value_text, &font_messages, 0);
+}
+
+void DrawSpeed(int Speed, int SpeedPrev)
+{
+  if (Speed != SpeedPrev) lv_label_set_text_fmt(speed_value_text, "%d", Speed);
+}
+
+/**********************************************/
+// Draw water temperature gauge
+/**********************************************/
+void SetupWater()
+{
+  water_static_text1 = lv_label_create(screen_gauges);
+  water_static_text2 = lv_label_create(screen_gauges);
+  water_value_text = lv_label_create(screen_gauges);
+  lv_label_set_text(water_static_text1, "Water:");
+  lv_label_set_text(water_static_text2, "C");
+  lv_label_set_text(water_value_text, "0");
+  lv_obj_set_pos(water_static_text1, WATERX, WATERY);
+  lv_obj_set_pos(water_static_text2, WATERX + DELTA1, WATERY);
+  lv_obj_set_pos(water_value_text, WATERX + DELTA2, WATERY);
+  
+  lv_obj_set_style_text_font(water_static_text1, &font_messages, 0);
+  lv_obj_set_style_text_font(water_static_text2, &font_messages, 0);
+  lv_obj_set_style_text_font(water_value_text, &font_messages, 0);
+}
+
+void DrawWater(int Water, int WaterPrev)
+{
+  if (Water != WaterPrev) lv_label_set_text_fmt(water_value_text, "%d", Water);
+}
+
+/**********************************************/
+// Draw actual gear number
+/**********************************************/
 void SetupGear()
 {
-
+  gear = lv_label_create(screen_gauges);
+  lv_label_set_text(gear, "N");
+  lv_obj_set_pos(gear, GEARX, GEARY);
+  
+  lv_obj_set_style_text_font(gear, &font_gear, 0);
 }
 
-void DrawGear(char ID, signed char Gear)
+void DrawGear(signed char GearNum, signed char GearNumPrev)
 {
-
+  if (GearNum != GearNumPrev)
+  {
+    switch (GearNum)
+    {
+      case -1:
+        lv_label_set_text(gear, "R");
+        break;
+      case 0:
+        lv_label_set_text(gear, "N");
+        break;
+      default:
+        lv_label_set_text_fmt(gear, "%d", GearNum);
+        break;
+    }
+  }
 }
 
-// draw water temperature gauge, value is right aligned
-void DrawWaterTemp(char ID, int WaterTemp, int WaterTempPrev)
-{
-
-}
-
-// draw RPM gauge
+/**********************************************/
+// Draw RPM gauge
+/**********************************************/
 void SetupRPM()
 {
   RPMbar = lv_bar_create(screen_gauges);
 
   lv_obj_set_size(RPMbar, 800, 50);
-  lv_obj_set_pos(RPMbar, 0, 80);
+  lv_obj_set_pos(RPMbar, 0, RPMY);
   lv_bar_set_range(RPMbar, 0, CarProfile[DEFAULTCAR].RPM);
   lv_bar_set_value(RPMbar, 3000, LV_ANIM_OFF);
 }
@@ -983,18 +1146,14 @@ void AdjustMaxRPM(char ID)
   lv_bar_set_range(RPMbar, 0, CarProfile[ID].RPM);
 }
 
-void DrawRPM(char ID, int RPM, int RPMPrev)
+void DrawRPM(int RPM, int RPMPrev)
 {
   lv_bar_set_value(RPMbar, RPM, LV_ANIM_OFF);
 }
 
-// draw speed gauge, value is right aligned
-void DrawSpeed(char ID, int Speed, int SpeedPrev)
-{
-
-}
-
-// draw shift light indicator
+/**********************************************/
+// Draw shift light indicator
+/**********************************************/
 void SetupSLI()
 {
   // draw rectangles
@@ -1009,38 +1168,38 @@ void SetupSLI()
 
   lv_obj_set_style_bg_color(SLI1, bc, 0);
   lv_obj_set_size(SLI1 , 100, 50);
-  lv_obj_set_pos(SLI1 , 0, 10);
+  lv_obj_set_pos(SLI1 , 0, SLIY);
   
   lv_obj_set_style_bg_color(SLI2, bc, 0);
   lv_obj_set_size(SLI2 , 100, 50);
-  lv_obj_set_pos(SLI2 , 100, 10);
+  lv_obj_set_pos(SLI2 , 100, SLIY);
 
   lv_obj_set_style_bg_color(SLI3, bc, 0);
   lv_obj_set_size(SLI3 , 100, 50);
-  lv_obj_set_pos(SLI3 , 200, 10);
+  lv_obj_set_pos(SLI3 , 200, SLIY);
 
   lv_obj_set_style_bg_color(SLI4, bc, 0);
   lv_obj_set_size(SLI4 , 100, 50);
-  lv_obj_set_pos(SLI4 , 300, 10);
+  lv_obj_set_pos(SLI4 , 300, SLIY);
 
   lv_obj_set_style_bg_color(SLI5, bc, 0);
   lv_obj_set_size(SLI5 , 100, 50);
-  lv_obj_set_pos(SLI5 , 400, 10);
+  lv_obj_set_pos(SLI5 , 400, SLIY);
 
   lv_obj_set_style_bg_color(SLI6, bc, 0);
   lv_obj_set_size(SLI6 , 100, 50);
-  lv_obj_set_pos(SLI6 , 500, 10);
+  lv_obj_set_pos(SLI6 , 500, SLIY);
 
   lv_obj_set_style_bg_color(SLI7, bc, 0);
   lv_obj_set_size(SLI7 , 100, 50);
-  lv_obj_set_pos(SLI7 , 600, 10);
+  lv_obj_set_pos(SLI7 , 600, SLIY);
 
   lv_obj_set_style_bg_color(SLI8, bc, 0);
   lv_obj_set_size(SLI8 , 100, 50);
-  lv_obj_set_pos(SLI8 , 700, 10);
+  lv_obj_set_pos(SLI8 , 700, SLIY);
 }
 
-void DrawSLI(char ID, int SLI, int SLIPrev)
+void DrawSLI(int SLI, int SLIPrev)
 {
   if (SLI < SLIPrev)
   {
@@ -1094,19 +1253,6 @@ void DrawSLI(char ID, int SLI, int SLIPrev)
      }
    }
   }
-}
-
-// clear our internal data block
-void ResetInternalData()
-{
-  Screen[0].EngineWarnings = 0;
-  Screen[0].Fuel = 0;
-  Screen[0].Gear = -1;
-  Screen[0].RPMgauge = 0;
-  Screen[0].Speed = -1;
-  Screen[0].SLI = 0;
-  Screen[0].WaterTemp = 0;
-  blockpos = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1232,25 +1378,28 @@ void setup()
     ddc = lv_color_make(70,  180, 70);  // darker draw color
     bc =  lv_color_make(0,   0,   0);   // background color
 
+    // Initialize fonts
+    LV_FONT_DECLARE(font_gear);
+    LV_FONT_DECLARE(font_messages);
+
     screen_gauges = lv_obj_create(NULL);
     screen_carselection = lv_obj_create(NULL);
 
     UploadCarProfiles();
-    
-    SetupSLI();
-    SetupRPM();
-    //SetupGear();
+
     SetupGaugesScreen();
     SetupCarSelectionMenu();
+
+    SetupSLI();
+    SetupRPM();
+    SetupGear();
     SetupEngineWarnings();
+    SetupWater();
+    SetupFuel();
+    SetupSpeed();
 
     DrawGaugesScreen(DEFAULTCAR);
     ActiveCar = DEFAULTCAR;
-    
-    // Create a simple label just for fun
-    lv_obj_t *label = lv_label_create(lv_screen_active() );
-    lv_label_set_text(label, "Hello Arduino, I'm LVGL!");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1292,27 +1441,27 @@ void loop()
 
                 // calculate and draw Engine Warning lights
                 Screen[1].EngineWarnings = InData->EngineWarnings;
-                if (Screen[0].EngineWarnings != Screen[1].EngineWarnings) DrawEngineWarnings(ActiveCar, Screen[1].EngineWarnings, Screen[0].EngineWarnings);
+                if (Screen[0].EngineWarnings != Screen[1].EngineWarnings) DrawEngineWarnings(Screen[1].EngineWarnings, Screen[0].EngineWarnings);
 
                 // calculate and draw RPM gauge
                 Screen[1].RPMgauge = (int)InData->RPM;
-                if (Screen[0].RPMgauge != Screen[1].RPMgauge) DrawRPM(ActiveCar, Screen[1].RPMgauge, Screen[0].RPMgauge);
+                if (Screen[0].RPMgauge != Screen[1].RPMgauge) DrawRPM(Screen[1].RPMgauge, Screen[0].RPMgauge);
 
                 // calculate and draw gear number
                 Screen[1].Gear = InData->Gear;
-                if (Screen[0].Gear != Screen[1].Gear) DrawGear(ActiveCar, Screen[1].Gear);
+                if (Screen[0].Gear != Screen[1].Gear) DrawGear(Screen[1].Gear, Screen[0].Gear);
 
                 // calculate and draw fuel level gauge
                 Screen[1].Fuel = (int)(InData->Fuel*10); // convert float data to int and keep the first digit of the fractional part also
-                if (Screen[0].Fuel != Screen[1].Fuel) DrawFuel(ActiveCar, Screen[1].Fuel, Screen[0].Fuel);
+                if (Screen[0].Fuel != Screen[1].Fuel) DrawFuel(Screen[1].Fuel, Screen[0].Fuel);
 
                 // calculate and draw speed gauge
                 Screen[1].Speed = (int)(InData->Speed*3.6);  // convert m/s to km/h
-                if (Screen[0].Speed != Screen[1].Speed) DrawSpeed(ActiveCar, Screen[1].Speed, Screen[0].Speed);
+                if (Screen[0].Speed != Screen[1].Speed) DrawSpeed(Screen[1].Speed, Screen[0].Speed);
 
                 // calculate and draw water temperature gauge
                 Screen[1].WaterTemp = (int)InData->WaterTemp;
-                if (Screen[0].WaterTemp != Screen[1].WaterTemp) DrawWaterTemp(ActiveCar, Screen[1].WaterTemp, Screen[0].WaterTemp);
+                if (Screen[0].WaterTemp != Screen[1].WaterTemp) DrawWater(Screen[1].WaterTemp, Screen[0].WaterTemp);
                 
                 // calculate and draw shift light indicator
                 rpm_int = (int)InData->RPM;
@@ -1329,7 +1478,7 @@ void loop()
                                            else if (rpm_int > CarProfile[ActiveCar].SLI[gear][1]) Screen[1].SLI = 2;
                                                 else if (rpm_int > CarProfile[ActiveCar].SLI[gear][0]) Screen[1].SLI = 1;
                 }
-                if (Screen[0].SLI != Screen[1].SLI) DrawSLI(ActiveCar, Screen[1].SLI, Screen[0].SLI);
+                if (Screen[0].SLI != Screen[1].SLI) DrawSLI(Screen[1].SLI, Screen[0].SLI);
 
                 // update old screen data
                 Screen[0].EngineWarnings = Screen[1].EngineWarnings;

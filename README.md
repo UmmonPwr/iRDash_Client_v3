@@ -1,14 +1,14 @@
 # iRDash_Client v3
 Displays live data of iRacing telemetry using a TFT display.
 
-The purpose of this program is to display iRacing's live telemetry data on an Arduino TFT display.
+The purpose of this program is to display iRacing's live telemetry data on an ATMEGA2560 Arduino board + TFT display.
 As of now it can show:
 - RPM
 - Eight segment Shift Light Indicator
-- (Gear -- WIP)
-- (Fuel quantity -- WIP)
-- (Water temperature -- WIP)
-- (Speed -- WIP)
+- Selected gear
+- Fuel quantity
+- Water temperature
+- Speed
 - Engine management lights
 
 It supports multiple profiles to suit the different cars available in the sim. (You can choose between them if you touch the profile name on the bottom right. -- WIP)
@@ -32,6 +32,7 @@ The program is developed on an ESP32-8048S043 display module
 - Touch controller IC: Goodix GT911
 
 Arduino IDE board settings:
+- IMPORTANT!!! your program will not boot, instead it will continuously crash with not correct settings!
 - Board: ESP32S3 Dev Module
 - Flash mode: QIO 80Mhz
 - Flash Size: 16 MB (128 Mb)
@@ -44,4 +45,4 @@ To compile the program you need the below libraries:
 - ESP_Panel_Library https://github.com/esp-arduino-libs/ESP32_Display_Panel
 - ESP32 core library v3.x https://github.com/espressif/arduino-esp32
 - LVGL v9.x https://github.com/lvgl/lvgl
-- As a remark Arduino GFX library (https://github.com/moononournation/Arduino_GFX) is not compatible with "ESP32 core library v3.x" and above when the display uses RGB interface. Displays with SPI or I2C interface are still working with Arduino GFX library.
+- As a remark Arduino GFX library (https://github.com/moononournation/Arduino_GFX) is not compatible with "ESP32 core library v3.x" when the display uses RGB interface. Displays with SPI or I2C interface are still working with Arduino GFX library.
