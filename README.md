@@ -1,7 +1,6 @@
 # iRDash_Client v3
-Displays live data of iRacing telemetry using a TFT display.
+Displays live data of iRacing telemetry using a touch sensitive TFT display.
 
-The purpose of this program is to display iRacing's live telemetry data on an ATMEGA2560 Arduino board + TFT display.
 As of now it can show:
 - RPM
 - Eight segment Shift Light Indicator
@@ -11,7 +10,7 @@ As of now it can show:
 - Speed
 - Engine management lights
 
-It supports multiple profiles to suit the different cars available in the sim. (You can choose between them if you touch the profile name on the bottom right. -- WIP)
+It supports multiple profiles to suit the different cars available in the sim. You can choose between them if you touch the profile name on the bottom right.
 
 Currently it has profile for:
 - Skip Barber (Skippy)
@@ -24,7 +23,7 @@ Currently it has profile for:
 - Super Formula Lights
 - BMW G82 M4
 
-The program is developed on an ESP32-8048S043 display module
+The program is developed on an ESP32-8048S043 display module:
 - Size: 4.3"
 - Resolution: 800x480
 - Capacitive touch sensing
