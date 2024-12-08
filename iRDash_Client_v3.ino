@@ -229,11 +229,6 @@ static uint32_t my_tick(void)
   irsdk_revLimiterActive    = 0x20,
 }*/
 
-// color shading for engine management lights
-// values between 0 - 255; 255 means black, 0 means original color
-#define WARNINGLIGHT_ON 0
-#define WARNINGLIGHT_OFF 170
-
 // structure of the incoming serial data block
 // variables are aligned for 16/32 bit systems to prevent padding
 struct SIncomingData
@@ -718,6 +713,53 @@ void UploadCarProfiles()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////// Colors and styles                                                      ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// color shading for engine management lights
+// values between 0 - 255; 255 means black, 0 means original color
+#define WARNINGLIGHT_ON 0
+#define WARNINGLIGHT_OFF 170
+
+lv_color_t color_black, color_yellow, color_red, color_green, color_darkgreen, color_darkgrey, color_blue;
+lv_style_t style_backgroundline, style_SLI, style_RPM;
+
+void SetupColorsAndStyles()
+{
+  // Setup colors
+  // (green)         red: 80  ; green: 255 ; blue: 80
+  // (darker green)  red: 70  ; green: 180 ; blue: 70
+  // (yellow)        red: 255 ; green: 240 ; blue: 0
+  // (red)           red: 255 ; green: 50  ; blue: 50
+  // (black)         red: 0   ; green: 0   ; blue: 0
+  // (blue)          red: 79  ; green: 144 ; blue: 209
+  
+  color_green =     lv_color_make(80,  200, 80);
+  color_darkgreen = lv_color_make(40,  150, 40);
+  color_yellow =    lv_color_make(255, 240,  0);
+  color_red =       lv_color_make(255, 50,  50);
+  color_black =     lv_color_make(0,   0,    0);
+  color_darkgrey =  lv_color_make(32,  32,  32);
+  color_blue =      lv_color_make(79, 144, 209);
+
+  // Setup styles
+  lv_style_init(&style_backgroundline);
+  lv_style_set_line_width(&style_backgroundline, 6);
+  lv_style_set_line_color(&style_backgroundline, color_darkgreen);
+  lv_style_set_line_rounded(&style_backgroundline, false);
+
+  lv_style_init(&style_SLI);
+  lv_style_set_border_color(&style_SLI, color_black);
+
+  lv_style_init(&style_RPM);
+  lv_style_set_radius(&style_RPM, 10);
+
+  // Initialize fonts
+  LV_FONT_DECLARE(font_gear);
+  LV_FONT_DECLARE(font_messages);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Car profile selection menu                                             ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -764,6 +806,9 @@ static void carselectionmatrix_handler(lv_event_t * e)
 
 void SetupCarSelectionMenu()
 {
+  // set background color
+  lv_obj_set_style_bg_color(screen_carselection, color_black, 0);
+
   for (int i=0; i<NUMOFCARS; i++)
   {
     carselectionmatrix[i] = lv_button_create(screen_carselection);
@@ -790,12 +835,8 @@ void DrawCarSelectionMenu()
 //////////////////// Gauge variables                                                        ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// LVGL color variables
-lv_color_t dc, mc, wc, bc, ddc;
-
 // gauge screen background
 lv_obj_t *backgroundline1, *backgroundline2;
-lv_style_t style_backgroundline;
 
 // RPM bar
 lv_obj_t *RPMbar;
@@ -856,16 +897,13 @@ void SetupGaugesScreen()
   static lv_point_precise_t line_points1[] = { {0, 150}, {799, 150} };
   static lv_point_precise_t line_points2[] = { {0, 390}, {799, 400} };
 
+  // set background color
+  lv_obj_set_style_bg_color(screen_gauges, color_black, 0);
+
+  // Draw background lines and apply the new style
   backgroundline1 = lv_line_create(screen_gauges);
   backgroundline2 = lv_line_create(screen_gauges);
 
-  // Create background line style
-  lv_style_init(&style_backgroundline);
-  lv_style_set_line_width(&style_backgroundline, 6);
-  lv_style_set_line_color(&style_backgroundline, ddc);
-  lv_style_set_line_rounded(&style_backgroundline, false);
-
-  // Draw background lines and apply the new style
   lv_line_set_points(backgroundline1, line_points1, 2);
   lv_line_set_points(backgroundline2, line_points2, 2);
   lv_obj_add_style(backgroundline1, &style_backgroundline, 0);
@@ -1017,8 +1055,8 @@ void DrawEngineWarnings(char Warning, char WarningPrev)
   }
 
   // draw limiter sign
-  Filtered = Warning & 0x10;
-  FilteredPrev = WarningPrev & 0x10;
+  //Filtered = Warning & 0x10;
+  //FilteredPrev = WarningPrev & 0x10;
 }
 
 /**********************************************/
@@ -1039,11 +1077,14 @@ void SetupFuel()
   lv_obj_set_style_text_font(fuel_static_text1, &font_messages, 0);
   lv_obj_set_style_text_font(fuel_static_text2, &font_messages, 0);
   lv_obj_set_style_text_font(fuel_value_text, &font_messages, 0);
+  lv_obj_set_style_text_color(fuel_static_text1, color_green, 0);
+  lv_obj_set_style_text_color(fuel_static_text2, color_green, 0);
+  lv_obj_set_style_text_color(fuel_value_text, color_green, 0);
 }
 
 void DrawFuel(int Fuel, int FuelPrev)
 {
-  // received value is multiplied by 10 to keep first fraction
+  // received value is multiplied by 10 to keep the first fraction
   if(Fuel != FuelPrev) lv_label_set_text_fmt(fuel_value_text, "%d.%d", Fuel / 10, Fuel % 10);
 }
 
@@ -1065,6 +1106,9 @@ void SetupSpeed()
   lv_obj_set_style_text_font(speed_static_text1, &font_messages, 0);
   lv_obj_set_style_text_font(speed_static_text2, &font_messages, 0);
   lv_obj_set_style_text_font(speed_value_text, &font_messages, 0);
+  lv_obj_set_style_text_color(speed_static_text1, color_green, 0);
+  lv_obj_set_style_text_color(speed_static_text2, color_green, 0);
+  lv_obj_set_style_text_color(speed_value_text, color_green, 0);
 }
 
 void DrawSpeed(int Speed, int SpeedPrev)
@@ -1090,6 +1134,9 @@ void SetupWater()
   lv_obj_set_style_text_font(water_static_text1, &font_messages, 0);
   lv_obj_set_style_text_font(water_static_text2, &font_messages, 0);
   lv_obj_set_style_text_font(water_value_text, &font_messages, 0);
+  lv_obj_set_style_text_color(water_static_text1, color_green, 0);
+  lv_obj_set_style_text_color(water_static_text2, color_green, 0);
+  lv_obj_set_style_text_color(water_value_text, color_green, 0);
 }
 
 void DrawWater(int Water, int WaterPrev)
@@ -1107,6 +1154,7 @@ void SetupGear()
   lv_obj_set_pos(gear, GEARX, GEARY);
   
   lv_obj_set_style_text_font(gear, &font_gear, 0);
+  lv_obj_set_style_text_color(gear, color_green, 0);
 }
 
 void DrawGear(signed char GearNum, signed char GearNumPrev)
@@ -1139,6 +1187,9 @@ void SetupRPM()
   lv_obj_set_pos(RPMbar, 0, RPMY);
   lv_bar_set_range(RPMbar, 0, CarProfile[DEFAULTCAR].RPM);
   lv_bar_set_value(RPMbar, 3000, LV_ANIM_OFF);
+  
+  lv_obj_add_style(RPMbar, &style_RPM, 0);
+  lv_obj_add_style(RPMbar, &style_RPM, LV_PART_INDICATOR);
 }
 
 void AdjustMaxRPM(char ID)
@@ -1166,92 +1217,128 @@ void SetupSLI()
   SLI7 = lv_obj_create(screen_gauges);
   SLI8 = lv_obj_create(screen_gauges);
 
-  lv_obj_set_style_bg_color(SLI1, bc, 0);
+  lv_obj_set_style_bg_color(SLI1, color_darkgrey, 0);
   lv_obj_set_size(SLI1 , 100, 50);
   lv_obj_set_pos(SLI1 , 0, SLIY);
+  lv_obj_add_style(SLI1, &style_SLI, 0);
   
-  lv_obj_set_style_bg_color(SLI2, bc, 0);
+  lv_obj_set_style_bg_color(SLI2, color_darkgrey, 0);
   lv_obj_set_size(SLI2 , 100, 50);
   lv_obj_set_pos(SLI2 , 100, SLIY);
+  lv_obj_add_style(SLI2, &style_SLI, 0);
 
-  lv_obj_set_style_bg_color(SLI3, bc, 0);
+  lv_obj_set_style_bg_color(SLI3, color_darkgrey, 0);
   lv_obj_set_size(SLI3 , 100, 50);
   lv_obj_set_pos(SLI3 , 200, SLIY);
+  lv_obj_add_style(SLI3, &style_SLI, 0);
 
-  lv_obj_set_style_bg_color(SLI4, bc, 0);
+  lv_obj_set_style_bg_color(SLI4, color_darkgrey, 0);
   lv_obj_set_size(SLI4 , 100, 50);
   lv_obj_set_pos(SLI4 , 300, SLIY);
+  lv_obj_add_style(SLI4, &style_SLI, 0);
 
-  lv_obj_set_style_bg_color(SLI5, bc, 0);
+  lv_obj_set_style_bg_color(SLI5, color_darkgrey, 0);
   lv_obj_set_size(SLI5 , 100, 50);
   lv_obj_set_pos(SLI5 , 400, SLIY);
+  lv_obj_add_style(SLI5, &style_SLI, 0);
 
-  lv_obj_set_style_bg_color(SLI6, bc, 0);
+  lv_obj_set_style_bg_color(SLI6, color_darkgrey, 0);
   lv_obj_set_size(SLI6 , 100, 50);
   lv_obj_set_pos(SLI6 , 500, SLIY);
+  lv_obj_add_style(SLI6, &style_SLI, 0);
 
-  lv_obj_set_style_bg_color(SLI7, bc, 0);
+  lv_obj_set_style_bg_color(SLI7, color_darkgrey, 0);
   lv_obj_set_size(SLI7 , 100, 50);
   lv_obj_set_pos(SLI7 , 600, SLIY);
+  lv_obj_add_style(SLI7, &style_SLI, 0);
 
-  lv_obj_set_style_bg_color(SLI8, bc, 0);
+  lv_obj_set_style_bg_color(SLI8, color_darkgrey, 0);
   lv_obj_set_size(SLI8 , 100, 50);
   lv_obj_set_pos(SLI8 , 700, SLIY);
+  lv_obj_add_style(SLI8, &style_SLI, 0);
 }
 
-void DrawSLI(int SLI, int SLIPrev)
+void DrawSLI(int SLI, int SLIPrev, char Limiter, char LimiterPrev)
 {
-  if (SLI < SLIPrev)
+  if (Limiter == 0)
   {
-  // clear only the disappeared indicators
-    for (int i=SLI; i<=SLIPrev-1; i++)
+    if (LimiterPrev != 0) // limiter was just switched off, clear all indicators and redraw them
     {
-      switch (i)
+      SLIPrev = 0;
+      lv_obj_set_style_bg_color(SLI1, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI2, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI3, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI4, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI5, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI6, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI7, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI8, color_darkgrey, 0);
+    }
+    
+    if (SLI < SLIPrev)  // clear only the disappeared indicators
+    {
+      for (int i=SLI; i<=SLIPrev-1; i++)
       {
-        case 0: lv_obj_set_style_bg_color(SLI1, bc, 0);
-                break;
-        case 1: lv_obj_set_style_bg_color(SLI2, bc, 0);
-                break;
-        case 2: lv_obj_set_style_bg_color(SLI3, bc, 0);
-                break;
-        case 3: lv_obj_set_style_bg_color(SLI4, bc, 0);
-                break;
-        case 4: lv_obj_set_style_bg_color(SLI5, bc, 0);
-                break;
-        case 5: lv_obj_set_style_bg_color(SLI6, bc, 0);
-                break;
-        case 6: lv_obj_set_style_bg_color(SLI7, bc, 0);
-                break;
-        case 7: lv_obj_set_style_bg_color(SLI8, bc, 0);
-                break;                
+        switch (i)
+        {
+          case 0: lv_obj_set_style_bg_color(SLI1, color_darkgrey, 0);
+                  break;
+          case 1: lv_obj_set_style_bg_color(SLI2, color_darkgrey, 0);
+                  break;
+          case 2: lv_obj_set_style_bg_color(SLI3, color_darkgrey, 0);
+                  break;
+          case 3: lv_obj_set_style_bg_color(SLI4, color_darkgrey, 0);
+                  break;
+          case 4: lv_obj_set_style_bg_color(SLI5, color_darkgrey, 0);
+                  break;
+          case 5: lv_obj_set_style_bg_color(SLI6, color_darkgrey, 0);
+                  break;
+          case 6: lv_obj_set_style_bg_color(SLI7, color_darkgrey, 0);
+                  break;
+          case 7: lv_obj_set_style_bg_color(SLI8, color_darkgrey, 0);
+                  break;                
+        }
       }
     }
-  }
-  else
-  {
- // draw only the appeared indicators
-    for (int i=SLIPrev+1; i<= SLI; i++)
+    else  // draw only the appeared indicators
     {
-      switch (i)
-      {
-        case 1: lv_obj_set_style_bg_color(SLI1, dc, 0);
-                break;
-        case 2: lv_obj_set_style_bg_color(SLI2, dc, 0);
-                break;
-        case 3: lv_obj_set_style_bg_color(SLI3, dc, 0);
-                break;
-        case 4: lv_obj_set_style_bg_color(SLI4, dc, 0);
-                break;
-        case 5: lv_obj_set_style_bg_color(SLI5, mc, 0);
-                break;
-        case 6: lv_obj_set_style_bg_color(SLI6, mc, 0);
-                break;
-        case 7: lv_obj_set_style_bg_color(SLI7, wc, 0);
-                break;
-        case 8: lv_obj_set_style_bg_color(SLI8, wc, 0);
-                break;
+      for (int i=SLIPrev+1; i<= SLI; i++)
+       {
+        switch (i)
+        {
+          case 1: lv_obj_set_style_bg_color(SLI1, color_green, 0);
+                  break;
+          case 2: lv_obj_set_style_bg_color(SLI2, color_green, 0);
+                  break;
+          case 3: lv_obj_set_style_bg_color(SLI3, color_green, 0);
+                  break;
+          case 4: lv_obj_set_style_bg_color(SLI4, color_green, 0);
+                  break;
+          case 5: lv_obj_set_style_bg_color(SLI5, color_yellow, 0);
+                  break;
+          case 6: lv_obj_set_style_bg_color(SLI6, color_yellow, 0);
+                  break;
+          case 7: lv_obj_set_style_bg_color(SLI7, color_red, 0);
+                  break;
+          case 8: lv_obj_set_style_bg_color(SLI8, color_red, 0);
+                  break;
+      }
      }
-   }
+    }
+  }
+  else // limiter is on
+  {
+    if (LimiterPrev == 0) // limiter was just switched on
+    {
+      lv_obj_set_style_bg_color(SLI1, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI2, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI3, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI4, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI5, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI6, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI7, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI8, color_blue, 0);
+    }
   }
 }
 
@@ -1364,29 +1451,14 @@ void setup()
     // initialize internal variables
     InData = new SIncomingData;  // allocate the data structure of the telemetry data
     pInData = (char*)InData;     // set the byte array pointer to the telemetry data
+    
     ResetInternalData();
+    UploadCarProfiles();
 
-    // Setup LVGL draw colors
-    // (green)         red: 80  ; green: 255 ; blue: 80
-    // (yellow)        red: 255 ; green: 240 ; blue: 0
-    // (red)           red: 255 ; green: 50  ; blue: 50
-    // (darker green)  red: 70  ; green: 180 ; blue: 70
-    // (background)    red: 0   ; green: 0   ; blue: 0
-    dc =  lv_color_make(80, 255, 80);   // draw color
-    mc =  lv_color_make(255, 240, 0);   // middle color
-    wc =  lv_color_make(255, 50,  50);  // warning color
-    ddc = lv_color_make(70,  180, 70);  // darker draw color
-    bc =  lv_color_make(0,   0,   0);   // background color
-
-    // Initialize fonts
-    LV_FONT_DECLARE(font_gear);
-    LV_FONT_DECLARE(font_messages);
+    SetupColorsAndStyles();
 
     screen_gauges = lv_obj_create(NULL);
     screen_carselection = lv_obj_create(NULL);
-
-    UploadCarProfiles();
-
     SetupGaugesScreen();
     SetupCarSelectionMenu();
 
@@ -1465,7 +1537,7 @@ void loop()
                 
                 // calculate and draw shift light indicator
                 rpm_int = (int)InData->RPM;
-                gear = InData->Gear+1;  // "-1" corresponds to reverse but index should start with "0"
+                gear = InData->Gear+1;  // "-1" corresponds to reverse but index must start with "0"
                 if (rpm_int <= CarProfile[ActiveCar].SLI[gear][0]) Screen[1].SLI = 0; // determine how many light to be activated for the current gear
                 else
                 {
@@ -1478,7 +1550,8 @@ void loop()
                                            else if (rpm_int > CarProfile[ActiveCar].SLI[gear][1]) Screen[1].SLI = 2;
                                                 else if (rpm_int > CarProfile[ActiveCar].SLI[gear][0]) Screen[1].SLI = 1;
                 }
-                if (Screen[0].SLI != Screen[1].SLI) DrawSLI(Screen[1].SLI, Screen[0].SLI);
+                if ((Screen[0].SLI != Screen[1].SLI) || ((Screen[0].EngineWarnings & 0x10) != (Screen[1].EngineWarnings & 0x10)))
+                  DrawSLI(Screen[1].SLI, Screen[0].SLI, Screen[1].EngineWarnings & 0x10, Screen[0].EngineWarnings & 0x10);
 
                 // update old screen data
                 Screen[0].EngineWarnings = Screen[1].EngineWarnings;
