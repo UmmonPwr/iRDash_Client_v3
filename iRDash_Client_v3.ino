@@ -727,13 +727,8 @@ lv_style_t style_backgroundline, style_SLI, style_RPM;
 void SetupColorsAndStyles()
 {
   // Setup colors
-  // (green)         red: 80  ; green: 255 ; blue: 80
-  // (darker green)  red: 70  ; green: 180 ; blue: 70
-  // (yellow)        red: 255 ; green: 240 ; blue: 0
-  // (red)           red: 255 ; green: 50  ; blue: 50
-  // (black)         red: 0   ; green: 0   ; blue: 0
-  // (blue)          red: 79  ; green: 144 ; blue: 209
-  
+  // lv_color_make(RED, GREEN, BLUE)
+
   color_green =     lv_color_make(80,  200, 80);
   color_darkgreen = lv_color_make(40,  150, 40);
   color_yellow =    lv_color_make(255, 240,  0);
@@ -843,6 +838,8 @@ lv_obj_t *RPMbar;
 
 // SLI
 lv_obj_t *SLI1, *SLI2, *SLI3, *SLI4, *SLI5, *SLI6, *SLI7, *SLI8;
+int64_t BlinkStart;
+bool BlinkStatus;
 
 // Engine management lights
 lv_image_dsc_t img_fuelpressure, img_oilpressure, img_stall, img_watertemp;
@@ -874,6 +871,7 @@ lv_obj_t *fuel_value_text, *speed_value_text, *water_value_text;
 
 #define RPMY 80
 #define SLIY 10
+#define SLIBLINKRATE 300000  // how long the light will stay on or off in microseconds
 
 #define EML_FUELPRESSX 0
 #define EML_FUELPRESSY 400
@@ -1085,7 +1083,12 @@ void SetupFuel()
 void DrawFuel(int Fuel, int FuelPrev)
 {
   // received value is multiplied by 10 to keep the first fraction
-  if(Fuel != FuelPrev) lv_label_set_text_fmt(fuel_value_text, "%d.%d", Fuel / 10, Fuel % 10);
+  if(Fuel != FuelPrev)
+  {
+    if (Fuel <= CarProfile[ActiveCar].Fuel) lv_obj_set_style_text_color(fuel_value_text, color_red, 0);
+    else lv_obj_set_style_text_color(fuel_value_text, color_green, 0);
+    lv_label_set_text_fmt(fuel_value_text, "%d.%d", Fuel / 10, Fuel % 10);
+  }
 }
 
 /**********************************************/
@@ -1141,7 +1144,12 @@ void SetupWater()
 
 void DrawWater(int Water, int WaterPrev)
 {
-  if (Water != WaterPrev) lv_label_set_text_fmt(water_value_text, "%d", Water);
+  if (Water != WaterPrev)
+  { 
+    if (Water >= CarProfile[ActiveCar].WaterTemp ) lv_obj_set_style_text_color(water_value_text, color_red, 0);
+    else lv_obj_set_style_text_color(water_value_text, color_green, 0);
+    lv_label_set_text_fmt(water_value_text, "%d", Water);
+  }
 }
 
 /**********************************************/
@@ -1260,19 +1268,39 @@ void SetupSLI()
 
 void DrawSLI(int SLI, int SLIPrev, char Limiter, char LimiterPrev)
 {
-  if (Limiter == 0)
+  int64_t Timer;
+
+  if (Limiter == 0) // limiter is off
   {
     if (LimiterPrev != 0) // limiter was just switched off, clear all indicators and redraw them
     {
-      SLIPrev = 0;
       lv_obj_set_style_bg_color(SLI1, color_darkgrey, 0);
       lv_obj_set_style_bg_color(SLI2, color_darkgrey, 0);
-      lv_obj_set_style_bg_color(SLI3, color_darkgrey, 0);
-      lv_obj_set_style_bg_color(SLI4, color_darkgrey, 0);
-      lv_obj_set_style_bg_color(SLI5, color_darkgrey, 0);
-      lv_obj_set_style_bg_color(SLI6, color_darkgrey, 0);
       lv_obj_set_style_bg_color(SLI7, color_darkgrey, 0);
       lv_obj_set_style_bg_color(SLI8, color_darkgrey, 0);
+
+      for (int i=0; i<= SLI; i++)
+      {
+        switch (i)
+        {
+          case 1: lv_obj_set_style_bg_color(SLI1, color_green, 0);
+                  break;
+          case 2: lv_obj_set_style_bg_color(SLI2, color_green, 0);
+                  break;
+          case 3: lv_obj_set_style_bg_color(SLI3, color_green, 0);
+                  break;
+          case 4: lv_obj_set_style_bg_color(SLI4, color_green, 0);
+                  break;
+          case 5: lv_obj_set_style_bg_color(SLI5, color_yellow, 0);
+                  break;
+          case 6: lv_obj_set_style_bg_color(SLI6, color_yellow, 0);
+                  break;
+          case 7: lv_obj_set_style_bg_color(SLI7, color_red, 0);
+                  break;
+          case 8: lv_obj_set_style_bg_color(SLI8, color_red, 0);
+                  break;
+        }
+      }
     }
     
     if (SLI < SLIPrev)  // clear only the disappeared indicators
@@ -1300,7 +1328,8 @@ void DrawSLI(int SLI, int SLIPrev, char Limiter, char LimiterPrev)
         }
       }
     }
-    else  // draw only the appeared indicators
+    
+    if (SLI > SLIPrev) // draw only the appeared indicators
     {
       for (int i=SLIPrev+1; i<= SLI; i++)
        {
@@ -1328,16 +1357,43 @@ void DrawSLI(int SLI, int SLIPrev, char Limiter, char LimiterPrev)
   }
   else // limiter is on
   {
+    Timer = esp_timer_get_time();
+
     if (LimiterPrev == 0) // limiter was just switched on
     {
+      BlinkStart = Timer;
+      BlinkStatus = true;
       lv_obj_set_style_bg_color(SLI1, color_blue, 0);
       lv_obj_set_style_bg_color(SLI2, color_blue, 0);
-      lv_obj_set_style_bg_color(SLI3, color_blue, 0);
-      lv_obj_set_style_bg_color(SLI4, color_blue, 0);
-      lv_obj_set_style_bg_color(SLI5, color_blue, 0);
-      lv_obj_set_style_bg_color(SLI6, color_blue, 0);
+      lv_obj_set_style_bg_color(SLI3, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI4, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI5, color_darkgrey, 0);
+      lv_obj_set_style_bg_color(SLI6, color_darkgrey, 0);
+
       lv_obj_set_style_bg_color(SLI7, color_blue, 0);
       lv_obj_set_style_bg_color(SLI8, color_blue, 0);
+    }
+
+    // Check if enough time has elapsed and then do the blinking
+    if ((Timer - BlinkStart) > SLIBLINKRATE)
+    {
+      BlinkStart = Timer;
+      if (BlinkStatus == true)
+      {
+        BlinkStatus = false;
+        lv_obj_set_style_bg_color(SLI1, color_darkgrey, 0);
+        lv_obj_set_style_bg_color(SLI2, color_darkgrey, 0);
+        lv_obj_set_style_bg_color(SLI7, color_darkgrey, 0);
+        lv_obj_set_style_bg_color(SLI8, color_darkgrey, 0);
+      }
+      else
+      {
+        BlinkStatus = true;
+        lv_obj_set_style_bg_color(SLI1, color_blue, 0);
+        lv_obj_set_style_bg_color(SLI2, color_blue, 0);
+        lv_obj_set_style_bg_color(SLI7, color_blue, 0);
+        lv_obj_set_style_bg_color(SLI8, color_blue, 0);
+      }
     }
   }
 }
@@ -1521,19 +1577,19 @@ void loop()
 
                 // calculate and draw gear number
                 Screen[1].Gear = InData->Gear;
-                if (Screen[0].Gear != Screen[1].Gear) DrawGear(Screen[1].Gear, Screen[0].Gear);
+                DrawGear(Screen[1].Gear, Screen[0].Gear);
 
                 // calculate and draw fuel level gauge
                 Screen[1].Fuel = (int)(InData->Fuel*10); // convert float data to int and keep the first digit of the fractional part also
-                if (Screen[0].Fuel != Screen[1].Fuel) DrawFuel(Screen[1].Fuel, Screen[0].Fuel);
+                DrawFuel(Screen[1].Fuel, Screen[0].Fuel);
 
                 // calculate and draw speed gauge
                 Screen[1].Speed = (int)(InData->Speed*3.6);  // convert m/s to km/h
-                if (Screen[0].Speed != Screen[1].Speed) DrawSpeed(Screen[1].Speed, Screen[0].Speed);
+                DrawSpeed(Screen[1].Speed, Screen[0].Speed);
 
                 // calculate and draw water temperature gauge
                 Screen[1].WaterTemp = (int)InData->WaterTemp;
-                if (Screen[0].WaterTemp != Screen[1].WaterTemp) DrawWater(Screen[1].WaterTemp, Screen[0].WaterTemp);
+                DrawWater(Screen[1].WaterTemp, Screen[0].WaterTemp);
                 
                 // calculate and draw shift light indicator
                 rpm_int = (int)InData->RPM;
@@ -1550,8 +1606,7 @@ void loop()
                                            else if (rpm_int > CarProfile[ActiveCar].SLI[gear][1]) Screen[1].SLI = 2;
                                                 else if (rpm_int > CarProfile[ActiveCar].SLI[gear][0]) Screen[1].SLI = 1;
                 }
-                if ((Screen[0].SLI != Screen[1].SLI) || ((Screen[0].EngineWarnings & 0x10) != (Screen[1].EngineWarnings & 0x10)))
-                  DrawSLI(Screen[1].SLI, Screen[0].SLI, Screen[1].EngineWarnings & 0x10, Screen[0].EngineWarnings & 0x10);
+                DrawSLI(Screen[1].SLI, Screen[0].SLI, Screen[1].EngineWarnings & 0x10, Screen[0].EngineWarnings & 0x10);
 
                 // update old screen data
                 Screen[0].EngineWarnings = Screen[1].EngineWarnings;

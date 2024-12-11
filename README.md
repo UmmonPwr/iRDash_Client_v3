@@ -3,7 +3,7 @@ Displays live data of iRacing telemetry using a touch sensitive TFT display.
 
 ## Gauges it can show:
 - RPM bar
-- Eight segment Shift Light Indicator (full blue when limiter is active)
+- Eight segment Shift Light Indicator (blinking blue when limiter is active)
 - Selected gear
 - Fuel quantity
 - Water temperature
