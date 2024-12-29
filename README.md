@@ -20,7 +20,8 @@ It supports multiple profiles to suit the different cars available in the sim. Y
 - Porsche 911 GT3 cup (992) // updated for 2024 season 4
 - Toyota GR86
 - Super Formula Lights
-- BMW G82 M4
+- BMW M4 G82
+- BMW M2 CSR
 
 ## Display board
 The program is developed on an ESP32-8048S043 display module:
@@ -46,3 +47,6 @@ To compile the program you need the below libraries:
 ## Telemetry source
 To display the live data of iRacing it needs the "iRDash Server" program running on Windows host and connected to the Arduino board via USB.
 - https://github.com/UmmonPwr/iRDash-Server
+
+## Screenshot:
+<img src="images/screenshot.jpg" width=700>
