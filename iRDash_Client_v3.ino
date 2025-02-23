@@ -1,5 +1,8 @@
 #include <lvgl.h>
-#include <ESP_Panel_Library.h>
+//#include <ESP_Panel_Library.h>
+#include <esp_display_panel.hpp>
+
+using namespace esp_panel::drivers;
 
 #include "icon_fuelpressure.h"
 #include "icon_stall.h"
@@ -24,97 +27,104 @@
 #define LCD_RGB_TIMING_VPW              (4)  // vsync pulse width
 #define LCD_RGB_TIMING_VBP              (8)  // vsync back porch
 #define LCD_RGB_TIMING_VFP              (8)  // vsync front porch
+#define LCD_RGB_BOUNCE_BUFFER_SIZE      (LCD_WIDTH * 10)
 
-#define LCD_PIN_NUM_RGB_DISP            (-1) // not connected
-#define LCD_PIN_NUM_RGB_VSYNC           (41)
-#define LCD_PIN_NUM_RGB_HSYNC           (39)
-#define LCD_PIN_NUM_RGB_DE              (40)
-#define LCD_PIN_NUM_RGB_PCLK            (42)
-
-/* original pin layout as found in the board's documentation
-#define LCD_PIN_NUM_RGB_DATA0           (45) // r0
-#define LCD_PIN_NUM_RGB_DATA1           (48) // r1
-#define LCD_PIN_NUM_RGB_DATA2           (47) // r2
-#define LCD_PIN_NUM_RGB_DATA3           (21) // r3
-#define LCD_PIN_NUM_RGB_DATA4           (14) // r4
-#define LCD_PIN_NUM_RGB_DATA5           (5)  // g0
-#define LCD_PIN_NUM_RGB_DATA6           (6)  // g1
-#define LCD_PIN_NUM_RGB_DATA7           (7)  // g2
-#define LCD_PIN_NUM_RGB_DATA8           (15) // g3
-#define LCD_PIN_NUM_RGB_DATA9           (16) // g4
-#define LCD_PIN_NUM_RGB_DATA10          (4)  // g5
-#define LCD_PIN_NUM_RGB_DATA11          (8)  // b0
-#define LCD_PIN_NUM_RGB_DATA12          (3)  // b1
-#define LCD_PIN_NUM_RGB_DATA13          (46) // b2
-#define LCD_PIN_NUM_RGB_DATA14          (9)  // b3
-#define LCD_PIN_NUM_RGB_DATA15          (1)  // b4
-*/
+// from new sample code
+#define LCD_RGB_IO_DISP                  (-1) // not connected
+#define LCD_RGB_IO_VSYNC                 (41)
+#define LCD_RGB_IO_HSYNC                 (39)
+#define LCD_RGB_IO_DE                    (40)
+#define LCD_RGB_IO_PCLK                  (42)
 
 // color order reversed to BGR compared to what is in the original documentation
 // (this version displays the correct colors)
-#define LCD_PIN_NUM_RGB_DATA0           (8)  // r0
-#define LCD_PIN_NUM_RGB_DATA1           (3)  // r1
-#define LCD_PIN_NUM_RGB_DATA2           (46) // r2
-#define LCD_PIN_NUM_RGB_DATA3           (9)  // r3
-#define LCD_PIN_NUM_RGB_DATA4           (1)  // r4
-#define LCD_PIN_NUM_RGB_DATA5           (5)  // g0
-#define LCD_PIN_NUM_RGB_DATA6           (6)  // g1
-#define LCD_PIN_NUM_RGB_DATA7           (7)  // g2
-#define LCD_PIN_NUM_RGB_DATA8           (15) // g3
-#define LCD_PIN_NUM_RGB_DATA9           (16) // g4
-#define LCD_PIN_NUM_RGB_DATA10          (4)  // g5
-#define LCD_PIN_NUM_RGB_DATA11          (45) // b0
-#define LCD_PIN_NUM_RGB_DATA12          (48) // b1
-#define LCD_PIN_NUM_RGB_DATA13          (47) // b2
-#define LCD_PIN_NUM_RGB_DATA14          (21) // b3
-#define LCD_PIN_NUM_RGB_DATA15          (14) // b4
+#define LCD_RGB_IO_DATA0                (8)  // r0
+#define LCD_RGB_IO_DATA1                (3)  // r1
+#define LCD_RGB_IO_DATA2                (46) // r2
+#define LCD_RGB_IO_DATA3                (9)  // r3
+#define LCD_RGB_IO_DATA4                (1)  // r4
+#define LCD_RGB_IO_DATA5                (5)  // g0
+#define LCD_RGB_IO_DATA6                (6)  // g1
+#define LCD_RGB_IO_DATA7                (7)  // g2
+#define LCD_RGB_IO_DATA8                (15) // g3
+#define LCD_RGB_IO_DATA9                (16) // g4
+#define LCD_RGB_IO_DATA10               (4)  // g5
+#define LCD_RGB_IO_DATA11               (45) // b0
+#define LCD_RGB_IO_DATA12               (48) // b1
+#define LCD_RGB_IO_DATA13               (47) // b2
+#define LCD_RGB_IO_DATA14               (21) // b3
+#define LCD_RGB_IO_DATA15               (14) // b4
 
-#define LCD_PIN_NUM_RST                 (-1) // not connected
-#define LCD_PIN_NUM_BK_LIGHT            (2)
-#define LCD_BK_LIGHT_ON_LEVEL           (1)
+#define LCD_RST_IO                      (-1) // not connected
+#define LCD_BL_IO                       (2)
 
-#define LCD_BK_LIGHT_OFF_LEVEL !LCD_BK_LIGHT_ON_LEVEL
+#define LCD_BL_ON_LEVEL                 (1)
+#define LCD_BL_OFF_LEVEL                (!LCD_BL_ON_LEVEL)
 
-// Enable or disable printing RGB refresh rate
-#define ENABLE_PRINT_LCD_FPS            (1)
-
-#define _LCD_CLASS(name, ...) ESP_PanelLcd_##name(__VA_ARGS__)
+#define _LCD_CLASS(name, ...) LCD_##name(__VA_ARGS__)
 #define LCD_CLASS(name, ...)  _LCD_CLASS(name, ##__VA_ARGS__)
 
-ESP_PanelLcd *lcd;
+static LCD *create_lcd_without_config(void)
+{
+  BusRGB *bus = new BusRGB(
+        /* 16-bit RGB IOs */
+        LCD_RGB_IO_DATA0, LCD_RGB_IO_DATA1, LCD_RGB_IO_DATA2, LCD_RGB_IO_DATA3,
+        LCD_RGB_IO_DATA4, LCD_RGB_IO_DATA5, LCD_RGB_IO_DATA6, LCD_RGB_IO_DATA7,
+        LCD_RGB_IO_DATA8, LCD_RGB_IO_DATA9, LCD_RGB_IO_DATA10, LCD_RGB_IO_DATA11,
+        LCD_RGB_IO_DATA12, LCD_RGB_IO_DATA13, LCD_RGB_IO_DATA14, LCD_RGB_IO_DATA15,
+        LCD_RGB_IO_HSYNC, LCD_RGB_IO_VSYNC, LCD_RGB_IO_PCLK, LCD_RGB_IO_DE,
+        LCD_RGB_IO_DISP,
+        /* RGB timings */
+        LCD_RGB_TIMING_FREQ_HZ, LCD_WIDTH, LCD_HEIGHT,
+        LCD_RGB_TIMING_HPW, LCD_RGB_TIMING_HBP, LCD_RGB_TIMING_HFP,
+        LCD_RGB_TIMING_VPW, LCD_RGB_TIMING_VBP, LCD_RGB_TIMING_VFP);
 
-#if ENABLE_PRINT_LCD_FPS
-#define LCD_FPS_COUNT_MAX               (100)
+  return new LCD_CLASS(LCD_NAME, bus, LCD_WIDTH, LCD_HEIGHT, LCD_COLOR_BITS, LCD_RST_IO);
+}
+
+LCD *lcd;
+
+#if LCD_ENABLE_PRINT_FPS
+#define LCD_PRINT_FPS_PERIOD_MS         (1000)
+#define LCD_PRINT_FPS_COUNT_MAX         (50)
 
 DRAM_ATTR int frame_count = 0;
 DRAM_ATTR int fps = 0;
 DRAM_ATTR long start_time = 0;
 
-IRAM_ATTR bool onVsyncEndCallback(void *user_data)
+IRAM_ATTR bool onLCD_RefreshFinishCallback(void *user_data)
 {
-    long frame_start_time = *(long *)user_data;
-    if (frame_start_time == 0)
+    if (start_time == 0)
     {
-      (*(long *)user_data) = esp_timer_get_time() / 1000;
-      return false;
+        //start_time = millis();
+        start_time = esp_timer_get_time() / 1000;
+
+        return false;
     }
 
     frame_count++;
-    if (frame_count >= LCD_FPS_COUNT_MAX)
+    if (frame_count >= LCD_PRINT_FPS_COUNT_MAX)
     {
-      fps = LCD_FPS_COUNT_MAX * 1000 / (esp_timer_get_time() / 1000 - frame_start_time);
-      frame_count = 0;
-      (*(long *)user_data) = esp_timer_get_time() / 1000;
+        //fps = LCD_PRINT_FPS_COUNT_MAX * 1000 / (millis() - start_time);
+        fps = LCD_PRINT_FPS_COUNT_MAX * 1000 / ((esp_timer_get_time() / 1000) - start_time);
+        esp_rom_printf("LCD FPS: %d\n", fps);
+        frame_count = 0;
+        //start_time = millis();
+        start_time = esp_timer_get_time() / 1000;
     }
 
     return false;
 }
-#endif
+#endif // LCD_ENABLE_PRINT_FPS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// ESP_Panel_Library configuration according to ESP32-8048S043 spec (touch) //////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define TOUCH_NAME                GT911
+#define TOUCH_ADDRESS             (0)     // Typically set to 0 to use the default address.
+                                          // - For touchs with only one address, set to 0
+                                          // - For touchs with multiple addresses, set to 0 or the address
+                                          //   Like GT911, there are two addresses: 0x5D(default) and 0x14
 #define TOUCH_WIDTH               (480)
 #define TOUCH_WIDTH_SCALE_FACTOR  (1.6666)      // (LCD_WIDTH / TOUCH_WIDTH = 800 / 480)
 #define TOUCH_HEIGHT              (272)
@@ -122,16 +132,50 @@ IRAM_ATTR bool onVsyncEndCallback(void *user_data)
 #define TOUCH_I2C_FREQ_HZ         (400 * 1000)
 #define TOUCH_READ_POINTS_NUM     (5)           // maximum number of simultaneous touch points
 
-#define TOUCH_PIN_NUM_I2C_SCL     (20)
-#define TOUCH_PIN_NUM_I2C_SDA     (19)
-#define TOUCH_PIN_NUM_RST         (38)
-#define TOUCH_PIN_NUM_INT         (-1)
+#define TOUCH_I2C_IO_SCL          (20)
+#define TOUCH_I2C_IO_SDA          (19)
+#define TOUCH_I2C_SCL_PULLUP      (1)  // 0/1
+#define TOUCH_I2C_SDA_PULLUP      (1)  // 0/1
+#define TOUCH_RST_IO              (38) // Set to `-1` if not used
+                                       // For GT911, the RST pin is also used to configure the I2C address
+#define TOUCH_RST_ACTIVE_LEVEL    (1)  // Set to `0` if reset is active low
+#define TOUCH_INT_IO              (-1)  // Set to `-1` if not used
+                                       // For GT911, the INT pin is also used to configure the I2C address
 
-#define _TOUCH_CLASS(name, ...) ESP_PanelTouch_##name(__VA_ARGS__)
-#define _TOUCH_CLASS(name, ...)  _TOUCH_CLASS(name, ##__VA_ARGS__)
+#define TOUCH_ENABLE_CREATE_WITH_CONFIG (0)
+#define TOUCH_ENABLE_INTERRUPT_CALLBACK (1)
+#define TOUCH_READ_PERIOD_MS            (30)
 
-ESP_PanelTouch *touch = nullptr;
-ESP_PanelTouchPoint point[TOUCH_READ_POINTS_NUM];
+#define _TOUCH_CLASS(name, ...) Touch##name(__VA_ARGS__)
+#define TOUCH_CLASS(name, ...)  _TOUCH_CLASS(name, ##__VA_ARGS__)
+
+#if TOUCH_ENABLE_INTERRUPT_CALLBACK
+IRAM_ATTR static bool onTouchInterruptCallback(void *user_data)
+{
+    esp_rom_printf("Touch interrupt callback\n");
+
+    return false;
+}
+#endif
+
+Touch *touch = nullptr;
+
+static Touch *create_touch_without_config(void)
+{
+    BusI2C *bus = new BusI2C(TOUCH_I2C_IO_SCL, TOUCH_I2C_IO_SDA,
+#if EXAMPLE_TOUCH_ADDRESS == 0
+        (BusI2C::ControlPanelFullConfig)ESP_PANEL_TOUCH_I2C_CONTROL_PANEL_CONFIG(TOUCH_NAME)
+#else
+        (BusI2C::ControlPanelFullConfig)ESP_PANEL_TOUCH_I2C_CONTROL_PANEL_CONFIG_WITH_ADDR(TOUCH_NAME, TOUCH_ADDRESS)
+#endif
+    );
+
+    /**
+     * Take GT911 as an example, the following is the actual code after macro expansion:
+     *      TouchGT911(bus, 320, 240, 13, 14);
+     */
+    return new TOUCH_CLASS(TOUCH_NAME, bus, TOUCH_WIDTH, TOUCH_HEIGHT, TOUCH_RST_IO, TOUCH_INT_IO);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// LVGL support functions                                                 ////////////////////////////
@@ -924,6 +968,7 @@ lv_obj_t *fuel_value_text, *speed_value_text, *water_value_text;
 #define GEARY 180
 
 #define RPMY 80
+
 #define SLIY 10
 #define SLIBLINKRATE 300000  // how long the light will stay on or off in microseconds
 
@@ -1458,131 +1503,118 @@ void DrawSLI(int SLI, int SLIPrev, char Limiter, char LimiterPrev)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void setup()
 {
-    Serial.begin( 115200 );
-    Serial.println("iRDash client v3 start");
+  Serial.begin( 115200 );
+  Serial.println("iRDash client v3 start");
 
 /******************************************************************/
 // ESP_Panel_Library: Initialize display device
 /******************************************************************/
-    #if EXAMPLE_LCD_PIN_NUM_BK_LIGHT >= 0
-      Serial.println("ESP32_Display_Panel: Initialize backlight control pin and turn it off");
-      ESP_PanelBacklight *backlight = new ESP_PanelBacklight(LCD_PIN_NUM_BK_LIGHT, LCD_BK_LIGHT_ON_LEVEL, true);
-      backlight->begin();
-      backlight->off();
-    #endif
+  #if LCD_BL_IO >= 0
+    Serial.println("ESP32_Display_Panel: Initializing backlight and turn it off");
+    BacklightPWM_LEDC *backlight = new BacklightPWM_LEDC(LCD_BL_IO, LCD_BL_ON_LEVEL);
+    backlight->begin();
+    backlight->off();
+  #endif
 
-    ESP_PanelBus_RGB *panel_bus = new ESP_PanelBus_RGB(LCD_WIDTH, LCD_HEIGHT,
-                                                       LCD_PIN_NUM_RGB_DATA0, LCD_PIN_NUM_RGB_DATA1,
-                                                       LCD_PIN_NUM_RGB_DATA2, LCD_PIN_NUM_RGB_DATA3,
-                                                       LCD_PIN_NUM_RGB_DATA4, LCD_PIN_NUM_RGB_DATA5,
-                                                       LCD_PIN_NUM_RGB_DATA6, LCD_PIN_NUM_RGB_DATA7,
-                                                       LCD_PIN_NUM_RGB_DATA8, LCD_PIN_NUM_RGB_DATA9,
-                                                       LCD_PIN_NUM_RGB_DATA10, LCD_PIN_NUM_RGB_DATA11,
-                                                       LCD_PIN_NUM_RGB_DATA12, LCD_PIN_NUM_RGB_DATA13,
-                                                       LCD_PIN_NUM_RGB_DATA14, LCD_PIN_NUM_RGB_DATA15,
-                                                       LCD_PIN_NUM_RGB_HSYNC, LCD_PIN_NUM_RGB_VSYNC,
-                                                       LCD_PIN_NUM_RGB_PCLK, LCD_PIN_NUM_RGB_DE,
-                                                       LCD_PIN_NUM_RGB_DISP);
-
-    panel_bus->configRgbTimingFreqHz(LCD_RGB_TIMING_FREQ_HZ);
-    panel_bus->configRgbTimingPorch(LCD_RGB_TIMING_HPW, LCD_RGB_TIMING_HBP, LCD_RGB_TIMING_HFP,
-                                    LCD_RGB_TIMING_VPW, LCD_RGB_TIMING_VBP, LCD_RGB_TIMING_VFP);
+  Serial.println("ESP32_Display_Panel: Create LCD device");
+  Serial.println("Initializing \"RGB\" LCD without config");
+  lcd = create_lcd_without_config();
     
-    panel_bus->configRgbBounceBufferSize(LCD_WIDTH * 10); // Set bounce buffer to avoid screen drift
-    panel_bus->begin();
+  // Configure bounce buffer to avoid screen drift
+  auto bus = static_cast<BusRGB *>(lcd->getBus());
+  bus->configRGB_BounceBufferSize(LCD_RGB_BOUNCE_BUFFER_SIZE); // Set bounce buffer to avoid screen drift
 
-    Serial.println("ESP32_Display_Panel: Create LCD device");
-
-    lcd = new LCD_CLASS(LCD_NAME, panel_bus, LCD_COLOR_BITS, LCD_PIN_NUM_RST);
-    lcd->init();
-    lcd->reset();
-    lcd->begin();
+  lcd->init();
+  lcd->reset();
+  lcd->begin();
     
-    #if LCD_PIN_NUM_RGB_DISP >= 0
-        lcd->displayOn();
-    #endif
-    #if ENABLE_PRINT_LCD_FPS
-        lcd->attachRefreshFinishCallback(onVsyncEndCallback, (void *)&start_time);
-    #endif
+  #if LCD_PIN_NUM_RGB_DISP >= 0
+    lcd->displayOn();
+  #endif
+  #if ENABLE_PRINT_LCD_FPS
+    lcd->attachRefreshFinishCallback(onVsyncEndCallback, (void *)&start_time);
+  #endif
 
-    #if LCD_PIN_NUM_BK_LIGHT >= 0
-        Serial.println("ESP32_Display_Panel: Turn on the backlight");
-        backlight->on();
-    #endif
+  #if LCD_PIN_NUM_BK_LIGHT >= 0
+    Serial.println("ESP32_Display_Panel: Turn on the backlight");
+    backlight->on();
+  #endif
 
 /******************************************************************/
 // ESP_Panel_Library: Initialize touch device
 /******************************************************************/
-    Serial.println("ESP_PanelTouch: Create I2C bus");
-    ESP_PanelBus_I2C *touch_bus = new ESP_PanelBus_I2C(TOUCH_PIN_NUM_I2C_SCL, TOUCH_PIN_NUM_I2C_SDA,
-                                                       ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG());
-    touch_bus->configI2cFreqHz(TOUCH_I2C_FREQ_HZ);
-    touch_bus->begin();
+  Serial.println("ESP_PanelTouch: Create I2C bus");
+    
+  touch = create_touch_without_config();
 
-    touch = new ESP_PanelTouch_GT911(touch_bus, TOUCH_WIDTH, TOUCH_HEIGHT,
-                                     TOUCH_PIN_NUM_RST, TOUCH_PIN_NUM_INT);
-    touch->init();
-    touch->begin();
-    Serial.println("ESP_PanelTouch: Touch device created");
+  assert(touch->begin());
+  #if TOUCH_ENABLE_INTERRUPT_CALLBACK
+    if (touch->isInterruptEnabled())
+    {
+      touch->attachInterruptCallback(onTouchInterruptCallback);
+    }
+  #endif
+
+  Serial.println("ESP_PanelTouch: Touch device created");
 
 /******************************************************************/
 // LVGL: Initialize library
 /******************************************************************/
-    String LVGL_Arduino = "LVGL: Hello Arduino! ";
-    LVGL_Arduino += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
+  String LVGL_Arduino = "LVGL: Hello Arduino! ";
+  LVGL_Arduino += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
 
-    Serial.println(LVGL_Arduino);
-    lv_init();
+  Serial.println(LVGL_Arduino);
+  lv_init();
 
-    // Set a tick source so that LVGL will know how much time elapsed.
-    lv_tick_set_cb(my_tick);
+  // Set a tick source so that LVGL will know how much time elapsed.
+  lv_tick_set_cb(my_tick);
 
-    // register print function for debugging
-    #if LV_USE_LOG != 0
-      lv_log_register_print_cb( my_print );
-    #endif
+  // register print function for debugging
+  #if LV_USE_LOG != 0
+    lv_log_register_print_cb( my_print );
+  #endif
 
-    // Create a display
-    disp = lv_display_create(LCD_WIDTH, LCD_HEIGHT);
-    lv_display_set_flush_cb(disp, my_disp_flush);
-    lv_display_set_buffers(disp, draw_buf, NULL, sizeof(draw_buf), LV_DISPLAY_RENDER_MODE_PARTIAL);
-    Serial.println("LVGL: display buffer initialized");
+  // Create a display
+  disp = lv_display_create(LCD_WIDTH, LCD_HEIGHT);
+  lv_display_set_flush_cb(disp, my_disp_flush);
+  lv_display_set_buffers(disp, draw_buf, NULL, sizeof(draw_buf), LV_DISPLAY_RENDER_MODE_PARTIAL);
+  Serial.println("LVGL: display buffer initialized");
 
-    // Initialize the input device driver
-    indev = lv_indev_create();
-    lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER); // Touchpad should have POINTER type
-    lv_indev_set_read_cb(indev, my_touchpad_read);
-    Serial.println("LVGL: input device initialized");
+  // Initialize the input device driver
+  indev = lv_indev_create();
+  lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER); // Touchpad should have POINTER type
+  lv_indev_set_read_cb(indev, my_touchpad_read);
+  Serial.println("LVGL: input device initialized");
 
-    Serial.println("HW setup done");
+  Serial.println("HW setup done");
 
 /******************************************************************/
 // iRDash: Setup car profiles, colors, gauges and screen layouts
 /******************************************************************/
-    // initialize internal variables
-    InData = new SIncomingData;  // allocate the data structure of the telemetry data
-    pInData = (char*)InData;     // set the byte array pointer to the telemetry data
+  // initialize internal variables
+  InData = new SIncomingData;  // allocate the data structure of the telemetry data
+  pInData = (char*)InData;     // set the byte array pointer to the telemetry data
     
-    ResetInternalData();
-    UploadCarProfiles();
+  ResetInternalData();
+  UploadCarProfiles();
 
-    SetupColorsAndStyles();
+  SetupColorsAndStyles();
 
-    screen_gauges = lv_obj_create(NULL);
-    screen_carselection = lv_obj_create(NULL);
-    SetupGaugesScreen();
-    SetupCarSelectionMenu();
+  screen_gauges = lv_obj_create(NULL);
+  screen_carselection = lv_obj_create(NULL);
+  SetupGaugesScreen();
+  SetupCarSelectionMenu();
 
-    SetupSLI();
-    SetupRPM();
-    SetupGear();
-    SetupEngineWarnings();
-    SetupWater();
-    SetupFuel();
-    SetupSpeed();
+  SetupSLI();
+  SetupRPM();
+  SetupGear();
+  SetupEngineWarnings();
+  SetupWater();
+  SetupFuel();
+  SetupSpeed();
 
-    DrawGaugesScreen(DEFAULTCAR);
-    ActiveCar = DEFAULTCAR;
+  DrawGaugesScreen(DEFAULTCAR);
+  ActiveCar = DEFAULTCAR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

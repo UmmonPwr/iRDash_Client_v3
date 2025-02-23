@@ -1,7 +1,7 @@
 # iRDash_Client v3
 Displays live data of iRacing telemetry using a touch sensitive TFT display.
 
-## Gauges it can show:
+## Gauges it can show
 - RPM bar
 - Eight segment Shift Light Indicator (blinking blue when limiter is active)
 - Selected gear
@@ -39,14 +39,14 @@ IMPORTANT!!! your program will not boot, instead it will continuously crash with
 - PSRAM: OPI PSRAM
 
 To compile the program you need the below libraries:
-- ESP_Display_Panel https://github.com/esp-arduino-libs/ESP32_Display_Panel
+- ESP_Display_Panel v1.x https://github.com/esp-arduino-libs/ESP32_Display_Panel
 - ESP32 core v3.x https://github.com/espressif/arduino-esp32
 - LVGL v9.x https://github.com/lvgl/lvgl
-- As a remark Arduino GFX library (https://github.com/moononournation/Arduino_GFX) is not compatible with "ESP32 core library v3.x" when the display uses RGB interface. Displays with SPI or I2C interface are still working with Arduino GFX library.
+- As a remark: Arduino GFX library (https://github.com/moononournation/Arduino_GFX) is not compatible with "ESP32 core library v3.x" when the display uses RGB interface. Displays with SPI or I2C interface are still working with Arduino GFX library.
 
 ## Telemetry source
 To display the live data of iRacing it needs the "iRDash Server" program running on Windows host and connected to the Arduino board via USB.
 - https://github.com/UmmonPwr/iRDash-Server
 
-## Screenshot:
+## Screenshot
 <img src="images/screenshot.jpg" width=700>
