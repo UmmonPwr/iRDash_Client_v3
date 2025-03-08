@@ -1,5 +1,4 @@
 #include <lvgl.h>
-//#include <ESP_Panel_Library.h>
 #include <esp_display_panel.hpp>
 
 using namespace esp_panel::drivers;
@@ -85,19 +84,19 @@ static LCD *create_lcd_without_config(void)
 LCD *lcd;
 
 #if LCD_ENABLE_PRINT_FPS
-#define LCD_PRINT_FPS_PERIOD_MS         (1000)
-#define LCD_PRINT_FPS_COUNT_MAX         (50)
+  #define LCD_PRINT_FPS_PERIOD_MS         (1000)
+  #define LCD_PRINT_FPS_COUNT_MAX         (50)
 
-DRAM_ATTR int frame_count = 0;
-DRAM_ATTR int fps = 0;
-DRAM_ATTR long start_time = 0;
+  DRAM_ATTR int frame_count = 0;
+  DRAM_ATTR int fps = 0;
+  DRAM_ATTR long start_time = 0;
 
-IRAM_ATTR bool onLCD_RefreshFinishCallback(void *user_data)
-{
+  IRAM_ATTR bool onLCD_RefreshFinishCallback(void *user_data)
+  {
     if (start_time == 0)
     {
-        //start_time = millis();
-        start_time = esp_timer_get_time() / 1000;
+      //start_time = millis();
+      start_time = esp_timer_get_time() / 1000;
 
         return false;
     }
@@ -114,7 +113,7 @@ IRAM_ATTR bool onLCD_RefreshFinishCallback(void *user_data)
     }
 
     return false;
-}
+  }
 #endif // LCD_ENABLE_PRINT_FPS
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,12 +149,12 @@ IRAM_ATTR bool onLCD_RefreshFinishCallback(void *user_data)
 #define TOUCH_CLASS(name, ...)  _TOUCH_CLASS(name, ##__VA_ARGS__)
 
 #if TOUCH_ENABLE_INTERRUPT_CALLBACK
-IRAM_ATTR static bool onTouchInterruptCallback(void *user_data)
-{
+  IRAM_ATTR static bool onTouchInterruptCallback(void *user_data)
+  {
     esp_rom_printf("Touch interrupt callback\n");
 
     return false;
-}
+  }
 #endif
 
 Touch *touch = nullptr;
@@ -163,18 +162,18 @@ Touch *touch = nullptr;
 static Touch *create_touch_without_config(void)
 {
     BusI2C *bus = new BusI2C(TOUCH_I2C_IO_SCL, TOUCH_I2C_IO_SDA,
-#if EXAMPLE_TOUCH_ADDRESS == 0
+#if TOUCH_ADDRESS == 0
         (BusI2C::ControlPanelFullConfig)ESP_PANEL_TOUCH_I2C_CONTROL_PANEL_CONFIG(TOUCH_NAME)
 #else
         (BusI2C::ControlPanelFullConfig)ESP_PANEL_TOUCH_I2C_CONTROL_PANEL_CONFIG_WITH_ADDR(TOUCH_NAME, TOUCH_ADDRESS)
 #endif
     );
 
-    /**
-     * Take GT911 as an example, the following is the actual code after macro expansion:
-     *      TouchGT911(bus, 320, 240, 13, 14);
-     */
-    return new TOUCH_CLASS(TOUCH_NAME, bus, TOUCH_WIDTH, TOUCH_HEIGHT, TOUCH_RST_IO, TOUCH_INT_IO);
+  /**
+  * Take GT911 as an example, the following is the actual code after macro expansion:
+  *      TouchGT911(bus, 320, 240, 13, 14);
+  */
+  return new TOUCH_CLASS(TOUCH_NAME, bus, TOUCH_WIDTH, TOUCH_HEIGHT, TOUCH_RST_IO, TOUCH_INT_IO);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,12 +189,12 @@ lv_obj_t *screen_gauges, *screen_carselection;  // handler for screen layouts
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
 #if LV_USE_LOG != 0
-void my_print( lv_log_level_t level, const char * buf )
-{
+  void my_print( lv_log_level_t level, const char * buf )
+  {
     LV_UNUSED(level);
     Serial.println(buf);
     Serial.flush();
-}
+  }
 #endif
 
 // LVGL calls it when a rendered image needs to copied to the display
@@ -1525,17 +1524,20 @@ void setup()
   bus->configRGB_BounceBufferSize(LCD_RGB_BOUNCE_BUFFER_SIZE); // Set bounce buffer to avoid screen drift
 
   lcd->init();
-  lcd->reset();
-  lcd->begin();
-    
-  #if LCD_PIN_NUM_RGB_DISP >= 0
-    lcd->displayOn();
-  #endif
+
   #if ENABLE_PRINT_LCD_FPS
-    lcd->attachRefreshFinishCallback(onVsyncEndCallback, (void *)&start_time);
+    // Attach a callback function which will be called when the Vsync signal is detected
+    lcd->attachRefreshFinishCallback(onLCD_RefreshFinishCallback);
+  #endif
+  #if LCD_ENABLE_DRAW_FINISH_CALLBACK
+    // Attach a callback function which will be called when every bitmap drawing is completed
+    lcd->attachDrawBitmapFinishCallback(onLCD_DrawFinishCallback);
   #endif
 
-  #if LCD_PIN_NUM_BK_LIGHT >= 0
+  lcd->reset();
+  lcd->begin();
+
+  #if LCD_BL_IO >= 0
     Serial.println("ESP32_Display_Panel: Turn on the backlight");
     backlight->on();
   #endif
