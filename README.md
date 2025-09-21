@@ -20,7 +20,7 @@ It supports multiple profiles to suit the different cars available in the sim. Y
 - Porsche 911 GT3 cup (992) // updated for 2024 season 4
 - Toyota GR86
 - Super Formula Lights
-- BMW M4 G82
+- BMW M4 G82 GT4 evo  // updated for 2025 season 4
 - BMW M2 CSR
 
 ## Display board

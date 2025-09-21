@@ -245,22 +245,22 @@ static uint32_t my_tick(void)
 //////////////////// iRDash global variables                                                ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define NAMELENGTH 10
-#define NUMOFGEARS  10   // maximum number of gears including reverse and neutral
+#define NAMELENGTH      12
+#define NUMOFGEARS      10   // maximum number of gears including reverse and neutral
 // define car identification numbers
-#define NUMOFCARS   11   // number of car profiles, maximum is 49
-#define DEFAULTCAR  8    // car profile to show at startup
-#define ID_Skippy   0    // Skip Barber
-#define ID_CTS_V    1    // Cadillac CTS-V
-#define ID_MX5_NC   2    // Mazda MX5 NC
-#define ID_MX5_ND   3    // Mazda MX5 ND
-#define ID_FR20     4    // Formula Renault 2.0
-#define ID_DF3      5    // Dallara Formula 3
-#define ID_992_CUP  6    // Porsche 911 GT3 cup (992)
-#define ID_GR86     7    // Toyota GR86
-#define ID_SFL      8    // Super Formula Lights
-#define ID_M4_G82   9    // BMW G82 M4
-#define ID_M2_CSR  10    // BMW M2 CS Racing
+#define NUMOFCARS       11   // number of car profiles, maximum is 49
+#define DEFAULTCAR      8    // car profile to show at startup
+#define ID_Skippy       0    // Skip Barber
+#define ID_CTS_V        1    // Cadillac CTS-V
+#define ID_MX5_NC       2    // Mazda MX5 NC
+#define ID_MX5_ND       3    // Mazda MX5 ND
+#define ID_FR20         4    // Formula Renault 2.0
+#define ID_DF3          5    // Dallara Formula 3
+#define ID_992_CUP      6    // Porsche 911 GT3 cup (992)
+#define ID_GR86         7    // Toyota GR86
+#define ID_SFL          8    // Super Formula Lights
+#define ID_M4_G82_GT4   9    // BMW G82 M4 GT4
+#define ID_M2_CSR       10   // BMW M2 CS Racing
 
 // bit fields of engine warnings for reference
 /*enum irsdk_EngineWarnings 
@@ -656,83 +656,87 @@ void UploadCarProfiles()
   /**************************/
   // BMW M4 G82
   /**************************/
-  CarProfile[ID_M4_G82].CarName[0] = 'M';
-  CarProfile[ID_M4_G82].CarName[1] = '4';
-  CarProfile[ID_M4_G82].CarName[2] = ' ';
-  CarProfile[ID_M4_G82].CarName[3] = 'G';
-  CarProfile[ID_M4_G82].CarName[4] = '8';
-  CarProfile[ID_M4_G82].CarName[5] = '2';
-  CarProfile[ID_M4_G82].CarName[6] = 0;
-  CarProfile[ID_M4_G82].ID = ID_M4_G82;
+  CarProfile[ID_M4_G82_GT4].CarName[0] = 'M';
+  CarProfile[ID_M4_G82_GT4].CarName[1] = '4';
+  CarProfile[ID_M4_G82_GT4].CarName[2] = ' ';
+  CarProfile[ID_M4_G82_GT4].CarName[3] = 'G';
+  CarProfile[ID_M4_G82_GT4].CarName[4] = '8';
+  CarProfile[ID_M4_G82_GT4].CarName[5] = '2';
+  CarProfile[ID_M4_G82_GT4].CarName[6] = ' ';
+  CarProfile[ID_M4_G82_GT4].CarName[7] = 'G';
+  CarProfile[ID_M4_G82_GT4].CarName[8] = 'T';
+  CarProfile[ID_M4_G82_GT4].CarName[9] = '4';
+  CarProfile[ID_M4_G82_GT4].CarName[10] = 0;
+  CarProfile[ID_M4_G82_GT4].ID = ID_M4_G82_GT4;
 
-  CarProfile[ID_M4_G82].Fuel = 70;
-  CarProfile[ID_M4_G82].WaterTemp = 95;
-  CarProfile[ID_M4_G82].RPM = 7500;
+  CarProfile[ID_M4_G82_GT4].Fuel = 70;
+  CarProfile[ID_M4_G82_GT4].WaterTemp = 95;
+  CarProfile[ID_M4_G82_GT4].RPM = 7500;
 
-  for (int i = 0; i<2; i++)
-  // reverse, neutral
+  for (int i = 0; i<3; i++)
+  // reverse, neutral, 1st
   {
-    CarProfile[ID_M4_G82].SLI[i][0] = 5600; // 1st green
-    CarProfile[ID_M4_G82].SLI[i][1] = 5600; // 1st green
-    CarProfile[ID_M4_G82].SLI[i][2] = 5800; // 2nd green
-    CarProfile[ID_M4_G82].SLI[i][3] = 5800; // 2nd green
-    CarProfile[ID_M4_G82].SLI[i][4] = 6000; // 1st yellow
-    CarProfile[ID_M4_G82].SLI[i][5] = 6200; // 2nd yellow
-    CarProfile[ID_M4_G82].SLI[i][6] = 6400; // 1st red
-    CarProfile[ID_M4_G82].SLI[i][7] = 6600; // all red and blinking
+    CarProfile[ID_M4_G82_GT4].SLI[i][0] = 5000; // 1st green
+    CarProfile[ID_M4_G82_GT4].SLI[i][1] = 5000; // 1st green
+    CarProfile[ID_M4_G82_GT4].SLI[i][2] = 5400; // 2nd green
+    CarProfile[ID_M4_G82_GT4].SLI[i][3] = 5400; // 2nd green
+    CarProfile[ID_M4_G82_GT4].SLI[i][4] = 5800; // 1st yellow
+    CarProfile[ID_M4_G82_GT4].SLI[i][5] = 6200; // 2nd yellow
+    CarProfile[ID_M4_G82_GT4].SLI[i][6] = 6600; // 1st red
+    CarProfile[ID_M4_G82_GT4].SLI[i][7] = 7000; // all red and blinking
   }
 
-  // 1st gear
-  CarProfile[ID_M4_G82].SLI[2][0] = 5450;
-  CarProfile[ID_M4_G82].SLI[2][1] = 5450;
-  CarProfile[ID_M4_G82].SLI[2][2] = 5850;
-  CarProfile[ID_M4_G82].SLI[2][3] = 5850;
-  CarProfile[ID_M4_G82].SLI[2][4] = 6250;
-  CarProfile[ID_M4_G82].SLI[2][5] = 6650;
-  CarProfile[ID_M4_G82].SLI[2][6] = 7050;
-  CarProfile[ID_M4_G82].SLI[2][7] = 7450;
-
   // 2nd gear
-  CarProfile[ID_M4_G82].SLI[3][0] = 5800;
-  CarProfile[ID_M4_G82].SLI[3][1] = 5800;
-  CarProfile[ID_M4_G82].SLI[3][2] = 6125;
-  CarProfile[ID_M4_G82].SLI[3][3] = 6125;
-  CarProfile[ID_M4_G82].SLI[3][4] = 6450;
-  CarProfile[ID_M4_G82].SLI[3][5] = 6775;
-  CarProfile[ID_M4_G82].SLI[3][6] = 7100;
-  CarProfile[ID_M4_G82].SLI[3][7] = 7450;
+  CarProfile[ID_M4_G82_GT4].SLI[3][0] = 5350;
+  CarProfile[ID_M4_G82_GT4].SLI[3][1] = 5350;
+  CarProfile[ID_M4_G82_GT4].SLI[3][2] = 5675;
+  CarProfile[ID_M4_G82_GT4].SLI[3][3] = 5675;
+  CarProfile[ID_M4_G82_GT4].SLI[3][4] = 6010;
+  CarProfile[ID_M4_G82_GT4].SLI[3][5] = 6340;
+  CarProfile[ID_M4_G82_GT4].SLI[3][6] = 6670;
+  CarProfile[ID_M4_G82_GT4].SLI[3][7] = 7000;
 
   // 3rd gear
-  CarProfile[ID_M4_G82].SLI[4][0] = 6450;
-  CarProfile[ID_M4_G82].SLI[4][1] = 6450;
-  CarProfile[ID_M4_G82].SLI[4][2] = 6650;
-  CarProfile[ID_M4_G82].SLI[4][3] = 6650;
-  CarProfile[ID_M4_G82].SLI[4][4] = 6850;
-  CarProfile[ID_M4_G82].SLI[4][5] = 7050;
-  CarProfile[ID_M4_G82].SLI[4][6] = 7250;
-  CarProfile[ID_M4_G82].SLI[4][7] = 7450;
+  CarProfile[ID_M4_G82_GT4].SLI[4][0] = 6000;
+  CarProfile[ID_M4_G82_GT4].SLI[4][1] = 6000;
+  CarProfile[ID_M4_G82_GT4].SLI[4][2] = 6200;
+  CarProfile[ID_M4_G82_GT4].SLI[4][3] = 6200;
+  CarProfile[ID_M4_G82_GT4].SLI[4][4] = 6400;
+  CarProfile[ID_M4_G82_GT4].SLI[4][5] = 6600;
+  CarProfile[ID_M4_G82_GT4].SLI[4][6] = 6800;
+  CarProfile[ID_M4_G82_GT4].SLI[4][7] = 7000;
 
   // 4th gear
-  CarProfile[ID_M4_G82].SLI[5][0] = 6900;
-  CarProfile[ID_M4_G82].SLI[5][1] = 6900;
-  CarProfile[ID_M4_G82].SLI[5][2] = 7010;
-  CarProfile[ID_M4_G82].SLI[5][3] = 7010;
-  CarProfile[ID_M4_G82].SLI[5][4] = 7120;
-  CarProfile[ID_M4_G82].SLI[5][5] = 7230;
-  CarProfile[ID_M4_G82].SLI[5][6] = 7340;
-  CarProfile[ID_M4_G82].SLI[5][7] = 7450;
+  CarProfile[ID_M4_G82_GT4].SLI[5][0] = 6450;
+  CarProfile[ID_M4_G82_GT4].SLI[5][1] = 6450;
+  CarProfile[ID_M4_G82_GT4].SLI[5][2] = 6560;
+  CarProfile[ID_M4_G82_GT4].SLI[5][3] = 6560;
+  CarProfile[ID_M4_G82_GT4].SLI[5][4] = 6670;
+  CarProfile[ID_M4_G82_GT4].SLI[5][5] = 6780;
+  CarProfile[ID_M4_G82_GT4].SLI[5][6] = 6890;
+  CarProfile[ID_M4_G82_GT4].SLI[5][7] = 7000;
 
-  // 5th gear and above
-  for (int i = 6; i<NUMOFGEARS; i++)
+  // 5th gear
+  CarProfile[ID_M4_G82_GT4].SLI[6][0] = 6800;
+  CarProfile[ID_M4_G82_GT4].SLI[6][1] = 6800;
+  CarProfile[ID_M4_G82_GT4].SLI[6][2] = 6840;
+  CarProfile[ID_M4_G82_GT4].SLI[6][3] = 6840;
+  CarProfile[ID_M4_G82_GT4].SLI[6][4] = 6880;
+  CarProfile[ID_M4_G82_GT4].SLI[6][5] = 6920;
+  CarProfile[ID_M4_G82_GT4].SLI[6][6] = 6960;
+  CarProfile[ID_M4_G82_GT4].SLI[6][7] = 7000;
+ 
+  // 6th gear and above
+  for (int i = 7; i<NUMOFGEARS; i++)
   {
-    CarProfile[ID_M4_G82].SLI[i][0] = 7250;
-    CarProfile[ID_M4_G82].SLI[i][1] = 7250;
-    CarProfile[ID_M4_G82].SLI[i][2] = 7290;
-    CarProfile[ID_M4_G82].SLI[i][3] = 7290;
-    CarProfile[ID_M4_G82].SLI[i][4] = 7330;
-    CarProfile[ID_M4_G82].SLI[i][5] = 7370;
-    CarProfile[ID_M4_G82].SLI[i][6] = 7410;
-    CarProfile[ID_M4_G82].SLI[i][7] = 7450;
+    CarProfile[ID_M4_G82_GT4].SLI[i][0] = 6900;
+    CarProfile[ID_M4_G82_GT4].SLI[i][1] = 6900;
+    CarProfile[ID_M4_G82_GT4].SLI[i][2] = 6920;
+    CarProfile[ID_M4_G82_GT4].SLI[i][3] = 6920;
+    CarProfile[ID_M4_G82_GT4].SLI[i][4] = 6940;
+    CarProfile[ID_M4_G82_GT4].SLI[i][5] = 6960;
+    CarProfile[ID_M4_G82_GT4].SLI[i][6] = 6980;
+    CarProfile[ID_M4_G82_GT4].SLI[i][7] = 7000;
   }
 
   /**************************/
