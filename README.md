@@ -13,15 +13,16 @@ Displays live data of iRacing telemetry using a touch sensitive TFT display.
 ## Supported cars
 It supports multiple profiles to suit the different cars available in the sim. You can choose between them if you touch the profile name on the bottom right.
 - Skip Barber (Skippy)
-- Cadillac CTS-V
-- MX-5 (NC and ND)
 - Formula Renault 2.0
 - Dallara Formula 3
-- Porsche 911 GT3 cup (992) // updated for 2024 season 4
-- Toyota GR86
 - Super Formula Lights
-- BMW M4 G82 GT4 evo  // updated for 2025 season 4
+- Cadillac CTS-V
+- MX-5 (NC and ND)
+- Toyota GR86
 - BMW M2 CSR
+- BMW M4 G82 GT4 evo  // updated for 2025 season 4
+- Porsche 911 GT3 cup (992.1) // updated for 2024 season 4
+- Porsche 911 GT3 cup (992.2)
 
 ## Display board
 The program is developed on an ESP32-8048S043 display module:

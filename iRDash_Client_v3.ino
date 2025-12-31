@@ -248,19 +248,20 @@ static uint32_t my_tick(void)
 #define NAMELENGTH      12
 #define NUMOFGEARS      10   // maximum number of gears including reverse and neutral
 // define car identification numbers
-#define NUMOFCARS       11   // number of car profiles, maximum is 49
-#define DEFAULTCAR      8    // car profile to show at startup
+#define NUMOFCARS       12   // number of car profiles, maximum is 49
+#define DEFAULTCAR      3    // car profile to show at startup
 #define ID_Skippy       0    // Skip Barber
-#define ID_CTS_V        1    // Cadillac CTS-V
-#define ID_MX5_NC       2    // Mazda MX5 NC
-#define ID_MX5_ND       3    // Mazda MX5 ND
-#define ID_FR20         4    // Formula Renault 2.0
-#define ID_DF3          5    // Dallara Formula 3
-#define ID_992_CUP      6    // Porsche 911 GT3 cup (992)
+#define ID_FR20         1    // Formula Renault 2.0
+#define ID_DF3          2    // Dallara Formula 3
+#define ID_SFL          3    // Super Formula Lights
+#define ID_CTS_V        4    // Cadillac CTS-V
+#define ID_MX5_NC       5    // Mazda MX5 NC
+#define ID_MX5_ND       6    // Mazda MX5 ND
 #define ID_GR86         7    // Toyota GR86
-#define ID_SFL          8    // Super Formula Lights
+#define ID_M2_CSR       8    // BMW M2 CS Racing
 #define ID_M4_G82_GT4   9    // BMW G82 M4 GT4
-#define ID_M2_CSR       10   // BMW M2 CS Racing
+#define ID_992_1_CUP    10   // Porsche 911 GT3 cup (992.1)
+#define ID_992_2_CUP    11   // Porsche 911 GT3 cup (992.2)
 
 // bit fields of engine warnings for reference
 /*enum irsdk_EngineWarnings 
@@ -489,9 +490,10 @@ void UploadCarProfiles()
   CarProfile[ID_DF3].CarName[1] = 'a';
   CarProfile[ID_DF3].CarName[2] = 'l';
   CarProfile[ID_DF3].CarName[3] = 'l';
-  CarProfile[ID_DF3].CarName[4] = 'F';
-  CarProfile[ID_DF3].CarName[5] = '3';
-  CarProfile[ID_DF3].CarName[6] = 0;
+  CarProfile[ID_DF3].CarName[4] = ' ';
+  CarProfile[ID_DF3].CarName[5] = 'F';
+  CarProfile[ID_DF3].CarName[6] = '3';
+  CarProfile[ID_DF3].CarName[7] = 0;
   CarProfile[ID_DF3].ID = ID_DF3;
 
   CarProfile[ID_DF3].Fuel = 50;
@@ -511,95 +513,98 @@ void UploadCarProfiles()
   }
 
   /**************************/
-  // Porsche 992 GT3 cup
+  // Porsche 992.1 GT3 cup
   /**************************/
-  CarProfile[ID_992_CUP].CarName[0] = '9';
-  CarProfile[ID_992_CUP].CarName[1] = '9';
-  CarProfile[ID_992_CUP].CarName[2] = '2';
-  CarProfile[ID_992_CUP].CarName[3] = 'c';
-  CarProfile[ID_992_CUP].CarName[4] = 'u';
-  CarProfile[ID_992_CUP].CarName[5] = 'p';
-  CarProfile[ID_992_CUP].CarName[6] = 0;
-  CarProfile[ID_992_CUP].ID = ID_992_CUP;
+  CarProfile[ID_992_1_CUP].CarName[0] = '9';
+  CarProfile[ID_992_1_CUP].CarName[1] = '9';
+  CarProfile[ID_992_1_CUP].CarName[2] = '2';
+  CarProfile[ID_992_1_CUP].CarName[3] = '.';
+  CarProfile[ID_992_1_CUP].CarName[4] = '1';
+  CarProfile[ID_992_1_CUP].CarName[5] = ' ';
+  CarProfile[ID_992_1_CUP].CarName[6] = 'c';
+  CarProfile[ID_992_1_CUP].CarName[7] = 'u';
+  CarProfile[ID_992_1_CUP].CarName[8] = 'p';
+  CarProfile[ID_992_1_CUP].CarName[9] = 0;
+  CarProfile[ID_992_1_CUP].ID = ID_992_1_CUP;
 
-  CarProfile[ID_992_CUP].Fuel = 50;
-  CarProfile[ID_992_CUP].WaterTemp = 110;
-  CarProfile[ID_992_CUP].RPM = 8800;
+  CarProfile[ID_992_1_CUP].Fuel = 50;
+  CarProfile[ID_992_1_CUP].WaterTemp = 110;
+  CarProfile[ID_992_1_CUP].RPM = 8800;
 
   for (int i = 0; i<2; i++)
   // reverse, neutral
   {
-    CarProfile[ID_992_CUP].SLI[i][0] = 7000; // 1st green
-    CarProfile[ID_992_CUP].SLI[i][1] = 7200; // 2nd green
-    CarProfile[ID_992_CUP].SLI[i][2] = 7400; // 3rd green
-    CarProfile[ID_992_CUP].SLI[i][3] = 7600; // 1st yellow
-    CarProfile[ID_992_CUP].SLI[i][4] = 7800; // 2nd yellow
-    CarProfile[ID_992_CUP].SLI[i][5] = 8000; // 3rd yellow
-    CarProfile[ID_992_CUP].SLI[i][6] = 8200; // 1st red
-    CarProfile[ID_992_CUP].SLI[i][7] = 8400; // 2nd red
+    CarProfile[ID_992_1_CUP].SLI[i][0] = 7000; // 1st green
+    CarProfile[ID_992_1_CUP].SLI[i][1] = 7200; // 2nd green
+    CarProfile[ID_992_1_CUP].SLI[i][2] = 7400; // 3rd green
+    CarProfile[ID_992_1_CUP].SLI[i][3] = 7600; // 1st yellow
+    CarProfile[ID_992_1_CUP].SLI[i][4] = 7800; // 2nd yellow
+    CarProfile[ID_992_1_CUP].SLI[i][5] = 8000; // 3rd yellow
+    CarProfile[ID_992_1_CUP].SLI[i][6] = 8200; // 1st red
+    CarProfile[ID_992_1_CUP].SLI[i][7] = 8400; // 2nd red
   } // all blue and blinking is not recorded
 
   // 1st gear
-  CarProfile[ID_992_CUP].SLI[2][0] = 1500;
-  CarProfile[ID_992_CUP].SLI[2][1] = 1500;
-  CarProfile[ID_992_CUP].SLI[2][2] = 1500;
-  CarProfile[ID_992_CUP].SLI[2][3] = 2000;
-  CarProfile[ID_992_CUP].SLI[2][4] = 3200;
-  CarProfile[ID_992_CUP].SLI[2][5] = 4350;
-  CarProfile[ID_992_CUP].SLI[2][6] = 5540;
-  CarProfile[ID_992_CUP].SLI[2][7] = 6720;
+  CarProfile[ID_992_1_CUP].SLI[2][0] = 1500;
+  CarProfile[ID_992_1_CUP].SLI[2][1] = 1500;
+  CarProfile[ID_992_1_CUP].SLI[2][2] = 1500;
+  CarProfile[ID_992_1_CUP].SLI[2][3] = 2000;
+  CarProfile[ID_992_1_CUP].SLI[2][4] = 3200;
+  CarProfile[ID_992_1_CUP].SLI[2][5] = 4350;
+  CarProfile[ID_992_1_CUP].SLI[2][6] = 5540;
+  CarProfile[ID_992_1_CUP].SLI[2][7] = 6720;
 
   // 2nd gear
-  CarProfile[ID_992_CUP].SLI[3][0] = 2800;
-  CarProfile[ID_992_CUP].SLI[3][1] = 3480;
-  CarProfile[ID_992_CUP].SLI[3][2] = 4135;
-  CarProfile[ID_992_CUP].SLI[3][3] = 4820;
-  CarProfile[ID_992_CUP].SLI[3][4] = 5500;
-  CarProfile[ID_992_CUP].SLI[3][5] = 6175;
-  CarProfile[ID_992_CUP].SLI[3][6] = 6850;
-  CarProfile[ID_992_CUP].SLI[3][7] = 7520;
+  CarProfile[ID_992_1_CUP].SLI[3][0] = 2800;
+  CarProfile[ID_992_1_CUP].SLI[3][1] = 3480;
+  CarProfile[ID_992_1_CUP].SLI[3][2] = 4135;
+  CarProfile[ID_992_1_CUP].SLI[3][3] = 4820;
+  CarProfile[ID_992_1_CUP].SLI[3][4] = 5500;
+  CarProfile[ID_992_1_CUP].SLI[3][5] = 6175;
+  CarProfile[ID_992_1_CUP].SLI[3][6] = 6850;
+  CarProfile[ID_992_1_CUP].SLI[3][7] = 7520;
 
   // 3rd gear
-  CarProfile[ID_992_CUP].SLI[4][0] = 5200;
-  CarProfile[ID_992_CUP].SLI[4][1] = 5600;
-  CarProfile[ID_992_CUP].SLI[4][2] = 6000;
-  CarProfile[ID_992_CUP].SLI[4][3] = 6400;
-  CarProfile[ID_992_CUP].SLI[4][4] = 6800;
-  CarProfile[ID_992_CUP].SLI[4][5] = 7200;
-  CarProfile[ID_992_CUP].SLI[4][6] = 7600;
-  CarProfile[ID_992_CUP].SLI[4][7] = 8000;
+  CarProfile[ID_992_1_CUP].SLI[4][0] = 5200;
+  CarProfile[ID_992_1_CUP].SLI[4][1] = 5600;
+  CarProfile[ID_992_1_CUP].SLI[4][2] = 6000;
+  CarProfile[ID_992_1_CUP].SLI[4][3] = 6400;
+  CarProfile[ID_992_1_CUP].SLI[4][4] = 6800;
+  CarProfile[ID_992_1_CUP].SLI[4][5] = 7200;
+  CarProfile[ID_992_1_CUP].SLI[4][6] = 7600;
+  CarProfile[ID_992_1_CUP].SLI[4][7] = 8000;
 
   // 4th gear
-  CarProfile[ID_992_CUP].SLI[5][0] = 6700;
-  CarProfile[ID_992_CUP].SLI[5][1] = 6925;
-  CarProfile[ID_992_CUP].SLI[5][2] = 7150;
-  CarProfile[ID_992_CUP].SLI[5][3] = 7375;
-  CarProfile[ID_992_CUP].SLI[5][4] = 7600;
-  CarProfile[ID_992_CUP].SLI[5][5] = 7825;
-  CarProfile[ID_992_CUP].SLI[5][6] = 8050;
-  CarProfile[ID_992_CUP].SLI[5][7] = 8275;
+  CarProfile[ID_992_1_CUP].SLI[5][0] = 6700;
+  CarProfile[ID_992_1_CUP].SLI[5][1] = 6925;
+  CarProfile[ID_992_1_CUP].SLI[5][2] = 7150;
+  CarProfile[ID_992_1_CUP].SLI[5][3] = 7375;
+  CarProfile[ID_992_1_CUP].SLI[5][4] = 7600;
+  CarProfile[ID_992_1_CUP].SLI[5][5] = 7825;
+  CarProfile[ID_992_1_CUP].SLI[5][6] = 8050;
+  CarProfile[ID_992_1_CUP].SLI[5][7] = 8275;
 
   // 5th gear
-  CarProfile[ID_992_CUP].SLI[6][0] = 7600;
-  CarProfile[ID_992_CUP].SLI[6][1] = 7725;
-  CarProfile[ID_992_CUP].SLI[6][2] = 7850;
-  CarProfile[ID_992_CUP].SLI[6][3] = 7975;
-  CarProfile[ID_992_CUP].SLI[6][4] = 8100;
-  CarProfile[ID_992_CUP].SLI[6][5] = 8225;
-  CarProfile[ID_992_CUP].SLI[6][6] = 8350;
-  CarProfile[ID_992_CUP].SLI[6][7] = 8475;
+  CarProfile[ID_992_1_CUP].SLI[6][0] = 7600;
+  CarProfile[ID_992_1_CUP].SLI[6][1] = 7725;
+  CarProfile[ID_992_1_CUP].SLI[6][2] = 7850;
+  CarProfile[ID_992_1_CUP].SLI[6][3] = 7975;
+  CarProfile[ID_992_1_CUP].SLI[6][4] = 8100;
+  CarProfile[ID_992_1_CUP].SLI[6][5] = 8225;
+  CarProfile[ID_992_1_CUP].SLI[6][6] = 8350;
+  CarProfile[ID_992_1_CUP].SLI[6][7] = 8475;
 
   // 6th gear and above
   for (int i = 7; i<NUMOFGEARS; i++)
   {
-    CarProfile[ID_992_CUP].SLI[i][0] = 8600;
-    CarProfile[ID_992_CUP].SLI[i][1] = 8650;
-    CarProfile[ID_992_CUP].SLI[i][2] = 8700;
-    CarProfile[ID_992_CUP].SLI[i][3] = 8750;
-    CarProfile[ID_992_CUP].SLI[i][4] = 8800;
-    CarProfile[ID_992_CUP].SLI[i][5] = 8850;
-    CarProfile[ID_992_CUP].SLI[i][6] = 8900;
-    CarProfile[ID_992_CUP].SLI[i][7] = 8950;
+    CarProfile[ID_992_1_CUP].SLI[i][0] = 8600;
+    CarProfile[ID_992_1_CUP].SLI[i][1] = 8650;
+    CarProfile[ID_992_1_CUP].SLI[i][2] = 8700;
+    CarProfile[ID_992_1_CUP].SLI[i][3] = 8750;
+    CarProfile[ID_992_1_CUP].SLI[i][4] = 8800;
+    CarProfile[ID_992_1_CUP].SLI[i][5] = 8850;
+    CarProfile[ID_992_1_CUP].SLI[i][6] = 8900;
+    CarProfile[ID_992_1_CUP].SLI[i][7] = 8950;
   }
 
   /**************************/
@@ -810,8 +815,102 @@ void UploadCarProfiles()
     CarProfile[ID_M2_CSR].SLI[i][6] = 6447;
     CarProfile[ID_M2_CSR].SLI[i][7] = 6447;
   }
-}
 
+  /**************************/
+  // Porsche 992.2 GT3 cup
+  /**************************/
+  CarProfile[ID_992_2_CUP].CarName[0] = '9';
+  CarProfile[ID_992_2_CUP].CarName[1] = '9';
+  CarProfile[ID_992_2_CUP].CarName[2] = '2';
+  CarProfile[ID_992_2_CUP].CarName[3] = '.';
+  CarProfile[ID_992_2_CUP].CarName[4] = '2';
+  CarProfile[ID_992_2_CUP].CarName[5] = ' ';
+  CarProfile[ID_992_2_CUP].CarName[6] = 'c';
+  CarProfile[ID_992_2_CUP].CarName[7] = 'u';
+  CarProfile[ID_992_2_CUP].CarName[8] = 'p';
+  CarProfile[ID_992_2_CUP].CarName[9] = 0;
+  CarProfile[ID_992_2_CUP].ID = ID_992_2_CUP;
+
+  CarProfile[ID_992_2_CUP].Fuel = 50;
+  CarProfile[ID_992_2_CUP].WaterTemp = 110;
+  CarProfile[ID_992_2_CUP].RPM = 8800;
+
+  for (int i = 0; i<2; i++)
+  // reverse, neutral
+  {
+    CarProfile[ID_992_2_CUP].SLI[i][0] = 7000; // 1st green
+    CarProfile[ID_992_2_CUP].SLI[i][1] = 7200; // 2nd green
+    CarProfile[ID_992_2_CUP].SLI[i][2] = 7400; // 3rd green
+    CarProfile[ID_992_2_CUP].SLI[i][3] = 7600; // 1st yellow
+    CarProfile[ID_992_2_CUP].SLI[i][4] = 7800; // 2nd yellow
+    CarProfile[ID_992_2_CUP].SLI[i][5] = 8000; // 3rd yellow
+    CarProfile[ID_992_2_CUP].SLI[i][6] = 8200; // 1st red
+    CarProfile[ID_992_2_CUP].SLI[i][7] = 8400; // 2nd red
+  } // all blue and blinking is not recorded
+
+  // 1st gear
+  CarProfile[ID_992_2_CUP].SLI[2][0] = 1500;
+  CarProfile[ID_992_2_CUP].SLI[2][1] = 1500;
+  CarProfile[ID_992_2_CUP].SLI[2][2] = 1500;
+  CarProfile[ID_992_2_CUP].SLI[2][3] = 2000;
+  CarProfile[ID_992_2_CUP].SLI[2][4] = 3200;
+  CarProfile[ID_992_2_CUP].SLI[2][5] = 4350;
+  CarProfile[ID_992_2_CUP].SLI[2][6] = 5540;
+  CarProfile[ID_992_2_CUP].SLI[2][7] = 6720;
+
+  // 2nd gear
+  CarProfile[ID_992_2_CUP].SLI[3][0] = 2800;
+  CarProfile[ID_992_2_CUP].SLI[3][1] = 3480;
+  CarProfile[ID_992_2_CUP].SLI[3][2] = 4135;
+  CarProfile[ID_992_2_CUP].SLI[3][3] = 4820;
+  CarProfile[ID_992_2_CUP].SLI[3][4] = 5500;
+  CarProfile[ID_992_2_CUP].SLI[3][5] = 6175;
+  CarProfile[ID_992_2_CUP].SLI[3][6] = 6850;
+  CarProfile[ID_992_2_CUP].SLI[3][7] = 7520;
+
+  // 3rd gear
+  CarProfile[ID_992_2_CUP].SLI[4][0] = 5200;
+  CarProfile[ID_992_2_CUP].SLI[4][1] = 5600;
+  CarProfile[ID_992_2_CUP].SLI[4][2] = 6000;
+  CarProfile[ID_992_2_CUP].SLI[4][3] = 6400;
+  CarProfile[ID_992_2_CUP].SLI[4][4] = 6800;
+  CarProfile[ID_992_2_CUP].SLI[4][5] = 7200;
+  CarProfile[ID_992_2_CUP].SLI[4][6] = 7600;
+  CarProfile[ID_992_2_CUP].SLI[4][7] = 8000;
+
+  // 4th gear
+  CarProfile[ID_992_2_CUP].SLI[5][0] = 6700;
+  CarProfile[ID_992_2_CUP].SLI[5][1] = 6925;
+  CarProfile[ID_992_2_CUP].SLI[5][2] = 7150;
+  CarProfile[ID_992_2_CUP].SLI[5][3] = 7375;
+  CarProfile[ID_992_2_CUP].SLI[5][4] = 7600;
+  CarProfile[ID_992_2_CUP].SLI[5][5] = 7825;
+  CarProfile[ID_992_2_CUP].SLI[5][6] = 8050;
+  CarProfile[ID_992_2_CUP].SLI[5][7] = 8275;
+
+  // 5th gear
+  CarProfile[ID_992_2_CUP].SLI[6][0] = 7600;
+  CarProfile[ID_992_2_CUP].SLI[6][1] = 7725;
+  CarProfile[ID_992_2_CUP].SLI[6][2] = 7850;
+  CarProfile[ID_992_2_CUP].SLI[6][3] = 7975;
+  CarProfile[ID_992_2_CUP].SLI[6][4] = 8100;
+  CarProfile[ID_992_2_CUP].SLI[6][5] = 8225;
+  CarProfile[ID_992_2_CUP].SLI[6][6] = 8350;
+  CarProfile[ID_992_2_CUP].SLI[6][7] = 8475;
+
+  // 6th gear and above
+  for (int i = 7; i<NUMOFGEARS; i++)
+  {
+    CarProfile[ID_992_2_CUP].SLI[i][0] = 8600;
+    CarProfile[ID_992_2_CUP].SLI[i][1] = 8650;
+    CarProfile[ID_992_2_CUP].SLI[i][2] = 8700;
+    CarProfile[ID_992_2_CUP].SLI[i][3] = 8750;
+    CarProfile[ID_992_2_CUP].SLI[i][4] = 8800;
+    CarProfile[ID_992_2_CUP].SLI[i][5] = 8850;
+    CarProfile[ID_992_2_CUP].SLI[i][6] = 8900;
+    CarProfile[ID_992_2_CUP].SLI[i][7] = 8950;
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Colors and styles                                                      ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
